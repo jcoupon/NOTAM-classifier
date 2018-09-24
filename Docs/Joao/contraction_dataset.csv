@@ -1,0 +1,350 @@
+ABN;airport beacon
+ABV;above
+ACC;area control center (ARTCC)
+ACCUM;accumulate
+ACFT;aircraft
+ACR;air carrier
+ACT;active
+ADJ;adjacent
+ADZD;advised
+AFD;airport facility directory
+AFSS;automated flight service station
+AGL;above ground level
+ALS;approach light system
+ALT;altitude
+ALTM;altimeter
+ALTN;alternate
+ALTNLY;alternately
+ALSTG;altimeter setting
+AMDT;amendment
+AMGR;airport manager
+AMOS;automatic meterological observing system
+AP;airport
+APCH;approach
+APLGT;approch lights
+APP;approach control
+ARFF;aircraft rescue and fire fighting
+ARR;arrive  arrival
+ASOS;automated surface observing system
+ASPH;asphalt
+ATC;air traffic control
+ATCSCC;air traffic control system command center
+ATIS;automatic terminal information service
+AUTH;authority
+AUTOB;automatic weather reporting system
+AVBL;available
+AWOS;automated weather observing system
+AWY;airway
+AZM;azimuth
+BA;FAIR braking action fair
+BA;NIL braking action nil
+BA;POOR braking action poor
+BCM;beacon
+BERM;snowbanks with gravel or earth
+BLW;below
+BND;bound
+BRG;bearing
+BYD;beyond
+CAAS;class A airspace
+CAT;category (Elsewhere: clear air turbulence)
+CBAS;class B airspace
+CBSA;class B surface area
+CCAS;class C airspace
+CCLKWS;counterclockwise
+CCSA;class C surface area
+CD;clearance delivery
+CDAS;class D airspace
+CEAS;class E airspace
+CESA;class E surface area
+CFR;code of federal regulations
+CGAS;class G air space
+CHAN;channel
+CHG;change or modification
+CIG;ceiling
+CK;check
+CLKWS;clockwise
+CLR;clear
+CLSD;closed
+CMB;climb
+CMSND;commissioned
+CNL;cancel
+CNTRLN;centerline
+COM;communications
+CONC;concrete
+CPD;coupled
+CRS;course
+CTC;contact
+CTL;control
+DALGT;daylight
+DCMSND;decommissioned
+DCT;durect
+DEGS;degrees
+DEP;depart  departure
+DEP;PROC departure procedure
+DH;decision height
+DISABLD;disabled
+DIST;distance
+DLA;delay or delayed
+DLT;delete
+DLY;daily
+DME;distance measuring equipment
+DMSTN;demonstration
+DP;dew point temperature
+DRFT;snowbank caused by wind action
+DSPLCD;displaced
+E;east
+EB;eastbound
+EFAS;enroute flight advisory service
+ELEV;elevation
+ENG;engine
+ENRT;enroute
+ENTR;entire
+EXC;except
+FAC;facility or facilities
+FAF;final approach fix
+FAN;MKR fan marker
+FDC;flight data center
+FI/T;flight inspector-temporary
+FI/P;flight inspector-permanent
+FM;from
+FREQ;frequency
+FNA;final approach
+FPM;feet per minute
+FREQ;frequency
+FRH;fly runway heading *
+FRI;Friday
+FRZN;frozen
+FSS;flight service station
+FT;food  feet
+GC;ground control
+GCA;ground control approach (Precision radar almost obsolete)
+GOVT;government
+GP;glide path
+GPS;global positioning system
+GRVL;gravel
+HAA;height above airport
+HAT;height above touchdown
+HDG;heading
+HEL;helicopter
+HELI;heliport
+HIRL;high intensityrunway lights
+HIWAS;hazardous inflight weather advisory service
+HOLDG;holding
+HOL;holiday
+HP;holding pattern
+HR;hour
+IAF;initial approach fix
+IAP;initial approach procedure
+INBD;inbound
+ID;identification
+IDENT;identify  identifier  idendification
+IF;intermediate fix
+ILS;instrument landing system
+IM;inner marker
+IMC;instrument meteorlogical conditions
+IN;inch  inches
+INDEFLY;indefinitely
+INFO;information
+INOP;inoperative
+INSTR;instrument
+INT;intersection
+INTL;international
+INTST;intensity
+IR;ice on runway/s
+KT;knots
+L;left
+LAA;local airport advisory
+LAT;latitude
+LAWRS;limited aviation weather reporting station
+LB;pound/poounds
+LC;local control
+LOC;local  locally  location
+LCTD;located
+LDA;localizer type directional aid
+LGT;light  lighting
+LGTD;lighted
+LIRL;low intensity runway lights
+LLWAS;low level wind shear alert system
+LM;compass locator at ILS middle marker
+LDG;landing
+LLZ;localizer
+LO;compass locator at ILS outer marker
+LONG;longitude
+LRN;loran
+LSR;loose snow on runway
+LT;left turn
+MAG;magnetic
+MAINT;maintain  maintenance
+MALS;medium intensity approach light system
+MALSF;medium intensity approach light system with sequenced flashers
+MALSR;medium intensity approach light system with runway alighnment indicator lights
+MAPT;missed approach point
+MCA;minimum crossing altitude
+MDA;minimum descent altitude
+MEA;minimum enroute altitude
+MED;medium
+MIN;minute
+MIRL;medium intensity runway lights
+MKR;marker
+MLS;microwave landing system
+MM;middle marker
+MNM;minimum
+MNT;monitor  monitoring  monitored
+MOC;minimum obstruction clearance
+MON;Monday
+MRA;minimum reception altitude
+MSA;minimum sector/safe altitude
+MSAW;minimum safe altitude warning
+MSG;message
+MSL;mean sea level
+MU;MUmeters
+MUD;mud
+MUNI;municipal
+N;noreth
+NA;not authorized
+NAV;navigation
+NB;northbound
+NDB;nondirectional beacon
+NE;northeast
+NGT;lnight
+NM;nautical miles
+NMR;nautical mile radius
+NONSTD;nonstandard
+NOPT;no procedure turn
+NR;number
+NTAP;notice to airmen publication
+NW;northwest
+OBSC;oblsucred  obscure  obscuring
+OBST;obstruction  obstacle
+OM;outer marker
+OPR;operator  operation  operative
+OPS;operation(s)
+ORIG;original
+OVR;over
+PAEW;personel and equipment working
+PAPI;precision approach path indicator
+PAR;precision approach radar
+PARL;parallel
+PAT;pattern
+PAX;passengers
+PCL;pilot controlled lighting
+PERM;permanent  permanently
+PJE;parachute jumping exercise
+PLA;practice low approach
+PLW;plow  plowed
+PN;prior notice required
+PRN;psuedo random noise
+PROC;procedure
+PROP;propeller
+PSR;packed snow on runway
+PTCHY;patchy
+PTN;procedure turn
+PVT;private
+R;right
+RAIL;runway alignment indicator lights
+RAMOS;remote automatic meterological opserving system
+RCAG;remote communmications air/ground facility
+RCL;runway center line
+RCLL;runway centerline light system
+RCO;remote communications outlet
+REC;receiver  receive
+RENL;runway end identifier lights
+RELCTD;relocated:
+REP;report
+RLLS;runway lead-in lights system
+RMNDR;remainder
+RNAV;area navigation
+RPLC;replace
+RQRD;required
+RRL;runway remaining lights
+RSR;en route surveilance radar
+RSVN;reservation
+RT;right turn
+RTE;route
+RTR;remote trasnsmitter/receiver
+RTS;return to service
+RUF;rough
+RVR;runway visual range
+RVRM;runway visual range midpoint
+RVRR;runway visual range rollout
+RVRT;runway visual range touchdown
+RWY;runway
+S;south
+SA;sand  sanded
+SAT;Saturday
+SAWR;supplemental aviation weather reporting station
+SB;south bound
+SDF;simplified directional facility
+SE;southeast
+SFL;sequence flashing lights
+SID;standdard instrument departure
+SIMUL;simultaneous or simultaneously
+SIR;pacekd or compacted snow and ice on runway/s
+SKED;scheduled or schedule
+SLR;slush on runways/s
+SN;snow
+SNBNK;snowbank/s caused by plowing
+SNGL;single
+SPD;speed
+SSALF;simplified short approach lighting sysstem with sequenced flashers
+SSALR;simplified short approach lighting system with runway alighnment indicator lights
+SSALS;simplified short approach lighting system
+SSR;secondary surveillance radar
+STA;straight-in approach
+STAR;standard terminal arrival
+SUN;Sunday
+SVC;service
+SVN;satellite vehicle number
+SW;southwest
+SWEPT;swkeot ir briin/broomed
+T;temperature
+TACAN;tactical air navigation aid
+TAR;terminal area surveilance radar
+TDZ;touchdown zone
+TDZLGT;touchdown zone lights
+TEMPO;temporary
+TFC;traffic
+TFR;temporary flight restriction
+TGL;touch and go landings
+THN;thin
+THR;threshold
+THRU;through
+THU;Thursday
+TIL;until
+TKOF;takeoff
+TM;traffic management
+TMPA;traffic management program alert
+TRNG;training
+TRSN;transition
+TSNT;transient
+TUE;Tuesday
+TWR;tower
+TWY;taxiway
+UAV;unmanned air vehicle
+UNAVBL;unavailable
+UNLGTD;unlighted
+UNMKD;unmarked
+UNMNT;unmonitored
+UNREL;unreliable
+UNUSBL;unusable
+VASI;visual approach slope indicator
+VDP;visual descent point
+VIA;by way of
+VICE;instead/versa
+VIS;visibility
+VMC;visual meterorological conditions
+VOL;volume
+VOR;vhf Omni-directional radio range
+VORTAC;VOR and TACAN (colocated)
+W;west
+WB;westbound
+WED;Wednesday
+WEF;with effect from or effective from
+WI;within
+WKDAYS;Monday through Friday
+WKEND;Saturday and Sunday
+WND;wind
+WPT;waypoint
+WSR;wet snow on runway/s
+WTR;water on runways
+WX;weather
