@@ -147,6 +147,7 @@ def azureml_main(dataframe1 = None, dataframe2 = None):
         SubstitutionRegex(r'\bWORK IN PRORESS\b', 'WIP'),
     )
 
+
     dataframe1['text'] = dataframe1['text'].apply(
         lambda notam: reduce(lambda t, f: f(t), substitutions, notam.upper()))
 
