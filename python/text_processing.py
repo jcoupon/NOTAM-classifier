@@ -148,7 +148,7 @@ def azureml_main(dataframe1 = None, dataframe2 = None):
     )
 
 
-    dataframe1['text'] = dataframe1['text'].apply(
+    dataframe1['text_azureml'] = dataframe1['text'].apply(
         lambda notam: reduce(lambda t, f: f(t), substitutions, notam.upper()))
 
     # Return value must be of a sequence of pandas.DataFrame

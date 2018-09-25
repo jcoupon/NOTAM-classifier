@@ -27,11 +27,11 @@ class Cleaning(object):
         self.N = len(self.__df)
 
     def split(self):
-        """Split the NOTAMs into different
-        items
+        """Split the NOTAMs into 
+        different items
         """
 
-        # unstructured text
+        # unstructured part
         self.__df['text'] = self.__df['fulltext'].apply(get_text)
 
         # structured part
@@ -46,21 +46,21 @@ def get_text(NOTAM):
     text "E)" from a NOTAM
     """
 
-    # first check if the qualifier
+    # first check whether the qualifier
     # is present. If not, do not 
     # return anything. These
     # NOTAMs will be addressed
     # differently (e.g. SNOWTAM)
-    if not re.findall(r'Q\)', NOTAM):
+    if not re.findall(r'\sQ\)', NOTAM):
         return ''
 
-    # return the second item
-    # among the E) to G) items
+    # split items between E) to G)
+    # return second item = E)
     try:
         # regex breakdown:
-        # - E\)E\): sometimes "E)" is repeated twice
-        # - \s[E-G]\) a space followed by a letter between
-        # E and G, followed by ")"
+        # - E\)E\): matches "E)" repeated twice
+        # - \s[E-G]\) matches a space followed by a letter between
+        # E and G, followed by a ")"
         return re.split(r'E\)E\)|\s[E-G]\)', NOTAM)[1]
     except:
         return ''
