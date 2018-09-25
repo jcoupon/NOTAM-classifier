@@ -1,0 +1,382 @@
+ABN,airport beacon
+ABV,above
+ACC,area control center
+ARTCC,area control center
+ACCUM,accumulate
+ACFT,aircraft
+ACR,air carrier
+ACT,active
+ADJ,adjacent
+ADZD,advised
+AFD,airport facility directory
+AFSS,automated flight service station
+AGL,above ground level
+ALS,approach light system
+ALT,altitude
+ALTM,altimeter
+ALTN,alternate
+ALTNLY,alternately
+ALSTG,altimeter setting
+AMDT,amendment
+AMGR,airport manager
+AMOS,automatic meterological observing system
+AP,airport
+APCH,approach
+APLGT,approach lights
+APP,approach control
+ARFF,aircraft rescue and fire fighting
+ARR,arrive  arrival
+ASOS,automated surface observing system
+ASPH,asphalt
+ATC,air traffic control
+ATCSCC,air traffic control system command center
+ATIS,automatic terminal information service
+AUTH,authority
+AUTOB,automatic weather reporting system
+AVBL,available
+AWOS,automated weather observing system
+AWY,airway
+AZM,azimuth
+BA,braking action
+BCM,beacon
+BERM,snowbanks with gravel or earth
+BLW,below
+BND,bound
+BRG,bearing
+BYD,beyond
+CAAS,class A airspace
+CAT,category
+CAT,clear air turbulence
+CBAS,class B airspace
+CBSA,class B surface area
+CCAS,class C airspace
+CCLKWS,counterclockwise
+CCSA,class C surface area
+CD,clearance delivery
+CDAS,class D airspace
+CEAS,class E airspace
+CESA,class E surface area
+CFR,code of federal regulations
+CGAS,class G air space
+CHAN,channel
+CHG,change or modification
+CIG,ceiling
+CK,check
+CLKWS,clockwise
+CLR,clear
+CLSD,closed
+CMB,climb
+CMSND,commissioned
+CNL,cancel
+CNTRLN,centerline
+COM,communications
+CONC,concrete
+CPD,coupled
+CRS,course
+CTC,contact
+CTL,control
+DALGT,daylight
+DCMSND,decommissioned
+DCT,direct
+DEGS,degrees
+DEP,depart  departure
+DEP,PROC departure procedure
+DH,decision height
+DISABLD,disabled
+DIST,distance
+DLA,delay
+DLA,delayed
+DLT,delete
+DLY,daily
+DME,distance measuring equipment
+DMSTN,demonstration
+DP,dew point temperature
+DRFT,snowbank caused by wind action
+DSPLCD,displaced
+E,east
+EB,eastbound
+EFAS,enroute flight advisory service
+ELEV,elevation
+ENG,engine
+ENRT,enroute
+ENRT,en route
+ENTR,entire
+EXC,except
+FAC,facility
+FAC,facilities
+FAF,final approach fix
+FDC,flight data center
+FI/T,flight inspector-temporary
+FI/P,flight inspector-permanent
+FM,from
+FREQ,frequency
+FNA,final approach
+FPM,feet per minute
+FREQ,frequency
+FRH,fly runway heading
+FRI,Friday
+FRZN,frozen
+FSS,flight service station
+FT,foot 
+FT,feet
+GC,ground control
+GCA,ground control approach
+GOVT,government
+GP,glide path
+GPS,global positioning system
+GRVL,gravel
+HAA,height above airport
+HAT,height above touchdown
+HDG,heading
+HEL,helicopter
+HELI,heliport
+HIRL,high intensity runway lights
+HIWAS,hazardous inflight weather advisory service
+HOLDG,holding
+HOL,holiday
+HP,holding pattern
+HR,hour
+IAF,initial approach fix
+IAP,initial approach procedure
+INBD,inbound
+ID,identification
+IDENT,identify
+IDENT,identifier
+IDENT,identification
+IF,intermediate fix
+ILS,instrument landing system
+IM,inner marker
+IMC,instrument meteorological conditions
+IN,inch
+IN,inches
+INDEFLY,indefinitely
+INFO,information
+INOP,inoperative
+INSTR,instrument
+INT,intersection
+INTL,international
+INTST,intensity
+IR,ice on runway
+IR,ice on runways
+KT,knots
+L,left
+LAA,local airport advisory
+LAT,latitude
+LAWRS,limited aviation weather reporting station
+LB,pound
+LB,pounds
+LC,local control
+LOC,local  locally  location
+LCTD,located
+LDA,localizer type directional aid
+LGT,light
+LGT,lighting
+LGTD,lighted
+LIRL,low intensity runway lights
+LLWAS,low level wind shear alert system
+LM,compass locator at ILS middle marker
+LDG,landing
+LLZ,localizer
+LO,compass locator at ILS outer marker
+LONG,longitude
+LRN,loran
+LSR,loose snow on runway
+LT,left turn
+MAG,magnetic
+MAINT,maintain
+MAINT,maintenance
+MALS,medium intensity approach light system
+MALSF,medium intensity approach light system with sequenced flashers
+MALSR,medium intensity approach light system with runway alignment indicator lights
+MAPT,missed approach point
+MCA,minimum crossing altitude
+MDA,minimum descent altitude
+MEA,minimum enroute altitude
+MED,medium
+MIN,minute
+MIRL,medium intensity runway lights
+MKR,marker
+MLS,microwave landing system
+MM,middle marker
+MNM,minimum
+MNT,monitor  monitoring  monitored
+MOC,minimum obstruction clearance
+MON,Monday
+MRA,minimum reception altitude
+MSA,minimum sector/safe altitude
+MSAW,minimum safe altitude warning
+MSG,message
+MSL,mean sea level
+MU,MUmeters
+MUD,mud
+MUNI,municipal
+N,noreth
+NA,not authorized
+NAV,navigation
+NB,northbound
+NDB,nondirectional beacon
+NE,northeast
+NGT,night
+NM,nautical miles
+NMR,nautical mile radius
+NONSTD,nonstandard
+NOPT,no procedure turn
+NR,number
+NTAP,notice to airmen publication
+NW,northwest
+OBSC,obscured
+OBSC,obscure
+OBSC,obscuring
+OBST,obstruction
+OBST,obstacle
+OM,outer marker
+OPR,operator  operation  operative
+OPS,operation
+OPS,operations
+ORIG,original
+OVR,over
+PAEW,personel and equipment working
+PAPI,precision approach path indicator
+PAR,precision approach radar
+PARL,parallel
+PAT,pattern
+PAX,passengers
+PCL,pilot controlled lighting
+PERM,permanent  
+PERM,permanently
+PJE,parachute jumping exercise
+PLA,practice low approach
+PLW,plow  
+PLW,plowed
+PN,prior notice required
+PRN,pseudo random noise
+PROC,procedure
+PROP,propeller
+PSR,packed snow on runway
+PTCHY,patchy
+PTN,procedure turn
+PVT,private
+R,right
+RAIL,runway alignment indicator lights
+RAMOS,remote automatic meterological observing system
+RCAG,remote communications air/ground facility
+RCL,runway center line
+RCLL,runway center line light
+RCLL,runway center line lights
+RCO,remote communications outlet
+REC,receiver
+REC,receive
+RENL,runway end identifier light
+RENL,runway end identifier lights
+RENL,runway end light
+RENL,runway end lights
+RELCTD,relocated
+REP,report
+RLLS,runway lead-in lighting system
+RMNDR,remainder
+RNAV,area navigation
+RPLC,replace
+RQRD,required
+RRL,runway remaining light
+RRL,runway remaining lights
+RSR,en route surveilance radar
+RSVN,reservation
+RT,right turn
+RTE,route
+RTR,remote transmitter/receiver
+RTS,return to service
+RUF,rough
+RVR,runway visual range
+RVRM,runway visual range midpoint
+RVRR,runway visual range rollout
+RVRT,runway visual range touchdown
+RWY,runway
+S,south
+SA,sand
+SA,sanded
+SAT,Saturday
+SAWR,supplemental aviation weather reporting station
+SB,south bound
+SDF,simplified directional facility
+SE,southeast
+SFL,sequence flashing lights
+SID,standdard instrument departure
+SIMUL,simultaneous
+SIMUL,simultaneously
+SIR,packed
+SIR,compacted snow and ice on runway
+SIR,compacted snow and ice on runways
+SKED,scheduled
+SKED,schedule
+SLR,slush on runway
+SLR,slush on runways
+SN,snow
+SNBNK,snowbank caused by plowing
+SNBNK,snowbanks caused by plowing
+SNGL,single
+SPD,speed
+SSALF,simplified short approach lighting system with sequenced flashers
+SSALR,simplified short approach lighting system with runway alignment indicator lights
+SSALS,simplified short approach lighting system
+SSR,secondary surveillance radar
+STA,straight-in approach
+STAR,standard terminal arrival
+SUN,Sunday
+SVC,service
+SVN,satellite vehicle number
+SW,southwest
+T,temperature
+TACAN,tactical air navigation aid
+TAR,terminal area surveilance radar
+TDZ,touchdown zone
+TDZLGT,touchdown zone lights
+TEMPO,temporary
+TFC,traffic
+TFR,temporary flight restriction
+TGL,touch and go landings
+THN,thin
+THR,threshold
+THRU,through
+THU,Thursday
+TIL,until
+TKOF,takeoff
+TM,traffic management
+TMPA,traffic management program alert
+TRNG,training
+TRSN,transition
+TSNT,transient
+TUE,Tuesday
+TWR,tower
+TWY,taxiway
+UAV,unmanned air vehicle
+UNAVBL,unavailable
+UNLGTD,unlighted
+UNMKD,unmarked
+UNMNT,unmonitored
+UNREL,unreliable
+UNUSBL,unusable
+VASI,visual approach slope indicator
+VDP,visual descent point
+VIA,by way of
+VICE,instead
+VICE,versa
+VIS,visibility
+VMC,visual meteorological conditions
+VOL,volume
+VOR,vhf Omni-directional radio range
+VORTAC,VOR and TACAN combination
+W,west
+WB,westbound
+WED,Wednesday
+WEF,with effect from
+WEF,effective from
+WI,within
+WKDAYS,Monday through Friday
+WKEND,Saturday and Sunday
+WND,wind
+WPT,waypoint
+WSR,wet snow on runway
+WSR,wet snow on runways
+WTR,water on runway
+WTR,water on runways
+WX,weather
