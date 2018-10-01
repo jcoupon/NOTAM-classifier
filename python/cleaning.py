@@ -20,7 +20,7 @@ class Cleaning(object):
 
 
     def read(self, path):
-        """Read a csv file and 
+        """Read a csv file and
         load it into Pandas data frame
         """
 
@@ -60,7 +60,7 @@ class Cleaning(object):
         """
 
         # process unstructured part (replace numbers, etc.)
-        sys.stdout.write('Cleaning structured part...')
+        sys.stdout.write('Cleaning unstructured part...')
         self.__df['text_clean'] = self.__df['text']\
             .apply(lambda x:clean_unstructured(x, self.__acronyms_dict))
         sys.stdout.write('done.\n')
@@ -76,7 +76,7 @@ class Cleaning(object):
         sys.stdout.write('Writting file...')
         self.__df.to_csv(path)
         sys.stdout.write('done.\n')
-        
+
 
 def get_text(NOTAM):
     """Extract unstructured 
@@ -132,8 +132,8 @@ def clean_unstructured(text, acronyms_dict):
     result = re.sub(r'\s+', ' ', result)
 
     # 5. replace anything which is non alpha-numeric
-    # or a space or < or > or /, by a space
-    result = re.sub(r'[^a-z0-9\s<>/]', ' ', result)
+    # or a space or < or > by a space
+    result = re.sub(r'[^a-z0-9\s<>]', ' ', result)
 
     # 6. return result
     return result #.upper()
@@ -153,6 +153,7 @@ def load_acronyms_dict(path=dir_path+'/acronyms_dict.csv'):
                 dictionary[value.lower()] = key
         except:
             raise Exception(
-                'Unexpected format for the input dictionary {}. It should be \"key,value\".'.format(path))
+                'Unexpected format for the \
+input dictionary {}. It should be \"key,value\".'.format(path))
 
     return dictionary
