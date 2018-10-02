@@ -5,7 +5,7 @@ import re
 import pandas as pd
 import numpy as np
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class Cleaning(object):
     """Class to perform cleaning 
@@ -64,6 +64,11 @@ class Cleaning(object):
         self.__df['text_clean'] = self.__df['text']\
             .apply(lambda x:clean_unstructured(x, self.__acronyms_dict))
         sys.stdout.write('done.\n')
+
+        # add the "important" column
+        # which is the inverse of the 
+        # "supress" column
+        self.__df['important'] = self.__df['supress'] == 0
 
         # structured part
         # TODO
@@ -139,7 +144,7 @@ def clean_unstructured(text, acronyms_dict):
     return result #.upper()
 
 
-def load_acronyms_dict(path=dir_path+'/acronyms_dict.csv'):
+def load_acronyms_dict(path=DIR_PATH+'/acronyms_dict.csv'):
     """Read path and return dictionary 
     in reverse order: 
     key,value -> dictionary[value] = key

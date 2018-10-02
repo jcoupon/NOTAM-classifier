@@ -6,16 +6,134 @@ import pandas as pd
 import numpy as np
 import pickle
 
-from sklearn.decomposition import TruncatedSVD, PCA
+from sklearn.feature_extraction.text import CountVectorizer
+
 from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.decomposition import TruncatedSVD
 
 
+# python path where the script is located
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+# default vocabulary path
+PATH_VOCABULARY = DIR_PATH+'/vocabulary_dict.csv'
 
-class Modelling(object):
+"""
+
+
+Class to train the model
+
+
+"""
+
+class ModelTraining(object):
+
+    def __init__(self, path=None):
+        """Initialization
+        """
+
+        # load the dictionary in case
+        # one is found. Note: will be
+        # overwritten by build_vocabulary()
+        try:
+            self.__vocabulary_dict = read_vocabulary(
+                path=PATH_VOCABULARY)
+        except:
+            self.__vocabulary_dict = None
+
+        # default number of dimensions for the word vector
+        self.__n_dim = 50
+
+        # read the data if a path is given
+        if path is not None:
+            self.read(path)
+
+    def read(self, path):
+        """Read the clean NOTAM csv file and 
+        load it into Pandas data frame
+        """
+
+        # read file
+        sys.stdout.write('Reading file...')
+        self.__df = pd.read_csv(path, sep=',').set_index('item_id')      
+
+        # save sample length
+        self.N = len(self.__df)
+        sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
+
+    def build_vocabulary(self, path=PATH_VOCABULARY):
+        """Build a vocabulary to be used for the 
+        word count step. The input file is a csv file
+        containing a column "text_clean" out of which 
+        the vocabulary will be built.
+
+        Write the vocabulary as a dictionary where 
+        keys are terms and values are indices in 
+        the feature matrix, or an iterable over terms.
+
+        See http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html
+        """
+
+        vectorizer = CountVectorizer(stop_words='english')
+
+        # get the NOTAMS as a corpus
+        corpus = self.__df['text_clean'].fillna('').values
+
+        # compute word_counts as a
+        # sparse matrix
+        sys.stdout.write('Building and saving the dictionary...')
+        vectorizer.fit(corpus)
+
+        # reset the indices so that there is 
+        # no gap between 0 and the end
+        vocabulary = {}
+        for i,(k,v) in enumerate(vectorizer.vocabulary_.items()):
+            vocabulary[k] = i
+
+        # write dictionary
+        pd.DataFrame\
+            .from_dict(vocabulary,  orient="index")\
+            .to_csv(path, header=False)
+        sys.stdout.write('done.\n')
+
+        # saves the dictionary into memory
+        # Note that we could have passed 
+        # vectorizer.vocabulary_ directly 
+        # but invoking the read_vocabulary
+        # function allows us to check it
+        self.__vocabulary_dict = read_vocabulary(path=path)
+
+        return
+
+    def vectorize(self, random_state=None, n_dim=None):
+
+        if n_dim is None:
+            n_dim = self.__n_dim
+        self.__vector = vectorize(
+            self.__df, PATH_VOCABULARY=PATH_VOCABULARY, 
+            n_dim=n_dim, random_state=None)
+
+    def get_vector(self):
+        return self.__vector
+
+    def get_vocabulary_dict(self):
+        return self.__vocabulary_dict
+        
+    def get_df(self):
+        return self.__df
+
+
+"""
+
+
+Class to test the model or run the predictions
+
+
+"""
+
+
+class ModelPredict(object):
     """Class to perform modelling
     on NOTAM data.
     """
@@ -28,7 +146,7 @@ class Modelling(object):
         pass
 
     def read(self, path):
-        """Read a csv file and 
+        """Read the clean NOTAM csv file and 
         load it into Pandas data frame
         """
 
@@ -109,7 +227,6 @@ def cluster_train(
 
     
     return model
-
 
 
 def break_lines(input_text, stride=60):
@@ -223,13 +340,78 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
 
         fig, ax = plt.subplots(figsize=(10, 10))
         for i,n in enumerate(label_types):
-            select = labels == n    
+            select = labels == n
             sys.stdout.write('Plotting {0} points with label {1}\n'.format(sum(select), label_names[i]))
             ax.scatter(X_decomposed[:, 0][select], X_decomposed[:,1][select], alpha=1.0, label=label_names[i])
         ax.set_xlabel('Coord1')
-        ax.set_ylabel('Coord2')
+        ax.set_ylabel('Coord2')    
         ax.legend(frameon=True)
 
         fig.savefig('graph.pdf')
+
+    return
+
+
+def read_vocabulary(path=PATH_VOCABULARY):
+    """Read the vocabulary from path and return a dictionary.
+
+    Function shared by all classes in this script.
+
+    Return the vocabulary as a dictionary where 
+    keys are terms and values are indices in 
+    the feature matrix, or an iterable over terms.
+
+    See http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html
+    """
+
+    # the to_dict method returns a nested dictionary 
+    # where the first layer is for the multiple columns (hence the [1]).
+    # we force Pandas to keep "nan" as a string as it may 
+    # exist in the NOTAMs
+    dictionary = pd.read_csv(
+        path, header=None, index_col=0, 
+        keep_default_na=False, na_values=['']).to_dict()[1]
+    N = len(list(dictionary.keys()))
+
+    return dictionary
+
+
+def vectorize(df, PATH_VOCABULARY=PATH_VOCABULARY, n_dim=50, random_state=None):
+    """Vectorize the NOTAM and reduce the 
+    dimensionality. First load a dictionary
+    then count the words and run dimensionality
+    reduction.  
+    """
+
+    # load the vocabulary
+    vocabulary_dict = read_vocabulary(PATH_VOCABULARY)
+    vectorizer = CountVectorizer(stop_words='english', vocabulary=vocabulary_dict)
+
+    # get the NOTAMS as a corpus
+    corpus = df['text_clean'].fillna('').values
+
+    # compute word_counts as a
+    # sparse matrix
+    sys.stdout.write('Vectorizing the NOTAMs...')
+    word_counts = vectorizer.transform(corpus)
+    sys.stdout.write('done.\n')
+
+    # vectorize word counts
+    # reduce dimensionality using linear PCA
+    # use TruncatedSVD which is really efficient
+    # with sparse matrices
+    sys.stdout.write('Performing dimensionality reduction...')
+    decomposer = TruncatedSVD(n_components=n_dim, random_state=random_state)
+    vector = decomposer.fit_transform(word_counts)
+    sys.stdout.write('done.\n')
+
+    return vector
+
+
+
+def tsne(vector, n_dim=2):
+    """Manifold t-SNE"""
+
+
 
     return
