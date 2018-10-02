@@ -409,9 +409,12 @@ def vectorize(df, PATH_VOCABULARY=PATH_VOCABULARY, n_dim=50, random_state=None):
 
 
 
-def tsne(vector, n_dim=2):
+def tsne(vector, n_dim=2, random_state=None):
     """Manifold t-SNE"""
 
+    # then use TSNE to reduce to 2 dimensions
+    result = TSNE(
+        n_components=2, verbose=1, random_state=random_state, perplexity=100)\
+        .fit_transform(vector)
 
-
-    return
+    return result
