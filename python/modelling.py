@@ -188,7 +188,7 @@ class ModelPredict(object):
 
 
 def cluster_train(
-        X, n_samples=5000, persist=None, 
+        X, n_samples=None, persist=None, 
         model_type='hierarchical', model_options_dict=None, 
         path_out=None):
     """Find clusters using scikit learn
@@ -209,7 +209,6 @@ def cluster_train(
         else:
             model = KMeans(**model_options_dict)
         model.fit(X[choice])
-
 
     if model_type == 'hierarchical':
         if model_options_dict is None:
@@ -235,11 +234,17 @@ def break_lines(input_text, stride=60):
     output_text = []
     for text in input_text:
         string = ''
-        ids = range(0, len(text), stride)
-        for start,end in zip(ids[:-1], ids[1:]):
-            string += text[start: end]+'<br>'
-        string += text[end:]
-
+        try:
+            if len(text) > stride:
+                ids = range(0, len(text), stride)
+                for start,end in zip(ids[:-1], ids[1:]):
+                    string += text[start: end]+'<br>'
+                string += text[end:]
+            else:
+                string = text
+        except:
+            pass
+        
         output_text.append(string)
     
     return np.array(output_text)
@@ -248,7 +253,7 @@ def break_lines(input_text, stride=60):
 def plot_clusters(
         X, labels, label_names=None, text=None, random_state=None, 
         html_out='clusters.html', interactive=True, do_break_lines=True,
-        X_decomposed=None):
+        do_decompose=False):
     """Plot the clusters with their labels
     using plotly. If plotly is not available,
     fall back to non-interactive matplotlib plot
@@ -279,11 +284,13 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
         text = break_lines(text)
 
     # Dimensionality reduction
-    if X_decomposed is None:
+    if do_decompose is True:
         sys.stdout.write('Performing dimensionality reduction...')
         decomposer = TruncatedSVD(n_components=2, random_state=random_state)
         X_decomposed = decomposer.fit_transform(X)
         sys.stdout.write('done\n')
+    else:
+        X_decomposed = X
 
     if interactive:
     
@@ -293,18 +300,20 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
         traces = []
         for i,n in enumerate(label_types):
             
-            select = labels == n    
+            select = labels == n
             sys.stdout.write(
                 'Plotting {0} points with label {1}\n'.format(
-                    sum(select), label_names[i]))
+                    sum(select), label_names[n]))
 
             trace = go.Scatter(
                 x = X_decomposed[:, 0][select],
                 y = X_decomposed[:, 1][select],
-                name = label_names[i],
+                name = label_names[n],
                 mode = 'markers',
                 marker = dict(size = 5,),
-                text = text[select]
+                text = text[select],
+                textposition='top left',
+
             )
             traces.append(trace)
 
@@ -412,9 +421,49 @@ def vectorize(df, PATH_VOCABULARY=PATH_VOCABULARY, n_dim=50, random_state=None):
 def tsne(vector, n_dim=2, random_state=None):
     """Manifold t-SNE"""
 
-    # then use TSNE to reduce to 2 dimensions
     result = TSNE(
-        n_components=2, verbose=1, random_state=random_state, perplexity=100)\
+        n_components=2, verbose=2, random_state=random_state, perplexity=100)\
         .fit_transform(vector)
 
     return result
+
+
+def get_cluster_purity(labels, classes):
+    """Compute the purity of clusters
+    given labels and classes.
+    
+    Loop over label types and compute 
+    the purity of the class with the
+    highest fraction.
+
+    """
+
+    # number of unique labels
+    label_types = np.unique(labels)
+    n_labels = len(label_types)
+
+    # number of unique classes
+    class_types = np.unique(classes)
+    #n_c = len(class_types)
+
+    # initialize results
+    N = np.zeros(n_labels)
+    purity = np.zeros(n_labels)
+
+    # main loop
+    for i,l in enumerate(label_types):
+
+        select = labels == l
+        N[i] = sum(select)
+
+        fractions = []
+        for j,c in enumerate(class_types):
+            f = sum(classes[select] == c)/N[i]
+            fractions.append(f)
+
+        purity[i] = max(fractions)
+        
+        #print(N[i], '{0:.2f}'.format(purity[i]))
+
+
+    return N, purity
