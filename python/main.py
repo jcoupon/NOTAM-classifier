@@ -17,6 +17,8 @@ import pandas as pd
 
 # load local libraries
 import cleaning
+import modelling
+
 #import text_processing
 
 """
@@ -56,22 +58,10 @@ def main(args):
             output_path = input_path
 
     if 'clean' in tasks:
+        clean(input_path, output_path+'_clean.csv')
 
-        # create cleaner object
-        cleaner = cleaning.Cleaning()
-
-        # read the data
-        cleaner.read(input_path)
-
-        # split the NOTAM into items (Q, A, B, C, etc.) 
-        cleaner.split()
-
-        # clean the unstructured (E) part
-        cleaner.clean()
-
-        # write result
-        cleaner.write(output_path+'_clean.csv')
-
+    if 'train' in tasks:
+        train(output_path+'_clean.csv', output_path+'_model.pickle')
 
 
     return
@@ -85,6 +75,42 @@ Main functions
 
 
 """
+
+def clean(input_path, output_path):
+
+    # create cleaner object
+    cleaner = cleaning.Cleaning()
+
+    # read the data
+    cleaner.read(input_path)
+
+    # split the NOTAM into items (Q, A, B, C, etc.) 
+    cleaner.split()
+
+    # clean the unstructured (E) part
+    cleaner.clean()
+
+    # write result
+    cleaner.write(output_path)
+
+    return
+
+def train(input_path, output_path):
+
+    # create model training object
+    model_train = modelling.ModelTraining(input_path)
+
+    # build a vocabulary and saves it in python/
+    model_train.build_vocabulary()
+
+    # vectorize the NOTAMs and do
+    # dimensionality reduction
+    model_train.vectorize()
+
+    # train and persist model
+    model_train.cluster_train(output_path)
+
+    return
 
 
 """

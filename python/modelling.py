@@ -114,6 +114,21 @@ class ModelTraining(object):
             self.__df, PATH_VOCABULARY=PATH_VOCABULARY, 
             n_dim=n_dim, random_state=None)
 
+    def cluster_train(self, path_out='model.pickle'):
+        """ Train clusters with hierachical clustering 
+        and persist model as the vector plus labels 
+        that will be used with k-NN for testing and 
+        predicting"""
+
+        # run hierachical clustering
+        sys.stdout.write('Training (clusters)...')
+        model_options_dict = {'n_clusters': 50}
+        model = find_clusters_train(
+            self.__vector, model_type='hierarchical',
+            model_options_dict=model_options_dict,
+            path_out=path_out, n_samples=1000)
+        sys.stdout.write('done.\n')
+
     def get_vector(self):
         return self.__vector
 
@@ -158,24 +173,11 @@ class ModelPredict(object):
         self.N = len(self.__df)
         sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
 
-    def cluster_train(self):
-
-        # TODO
-        #self.__model = modelling.cluster_train(
-        #    X_train, model_options_dict=model_options_dict)
-
-
-        pass
-
     def cluster_predict(self):
 
 
 
         pass
-
-
-
-
 
 
     def get_df(self):
@@ -187,7 +189,7 @@ class ModelPredict(object):
         sys.stdout.write('done.\n')
 
 
-def cluster_train(
+def find_clusters_train(
         X, n_samples=None, persist=None, 
         model_type='hierarchical', model_options_dict=None, 
         path_out=None):
@@ -210,6 +212,11 @@ def cluster_train(
             model = KMeans(**model_options_dict)
         model.fit(X[choice])
 
+        # persist model
+        if path_out is not None:
+            with open(path_out, 'wb') as file_out:
+                pickle.dump(model, file_out)
+
     if model_type == 'hierarchical':
         if model_options_dict is None:
             # Default parameters
@@ -218,14 +225,44 @@ def cluster_train(
             model = AgglomerativeClustering(**model_options_dict)
         model.fit(X[choice])
 
-    # persist model
-    if path_out is not None:
-        with open(path_out, 'wb') as file_out:
-            pickle.dump(model, file_out)
-
+        # persist model
+        if path_out is not None:
+            with open(path_out, 'wb') as file_out:
+                pickle.dump((X, model.labels_), file_out)
     
     return model
 
+
+def find_clusters_predict(
+        X, path_in, n_samples=None, persist=None, 
+        model_type='hierarchical', model_options_dict=None):
+    """Find clusters using scikit learn
+    clustering algorithms
+    """
+
+    # limit the number of NOTAMs for the test
+    if n_samples is not None:
+        choice = np.random.randint(X.shape[0], size=n_samples)
+    else:
+        choice = range(len(X))
+
+    if model_type == 'kmeans':
+        
+        # read model
+        with open(path_in, 'rb') as file_in:
+            model = pickle.load(file_in)
+
+        # evaluate labels
+        labels = model.predict(X[choice])
+
+    if model_type == 'hierarchical': 
+
+        # read model
+        with open(path_in, 'rb') as file_in:
+            X_train, labels_train = pickle.load(file_in)
+
+
+    return labels
 
 def break_lines(input_text, stride=60):
     """Break lines for a list of texts"""
