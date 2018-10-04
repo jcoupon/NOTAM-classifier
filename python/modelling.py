@@ -82,7 +82,7 @@ class ModelTraining(object):
 
         # compute word_counts as a
         # sparse matrix
-        sys.stdout.write('Building and saving the dictionary...')
+        sys.stdout.write('Building and saving the dictionary...'); sys.stdout.flush()
         vectorizer.fit(corpus)
 
         # reset the indices so that there is 
@@ -95,7 +95,7 @@ class ModelTraining(object):
         pd.DataFrame\
             .from_dict(vocabulary,  orient="index")\
             .to_csv(path, header=False)
-        sys.stdout.write('done.\n')
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
         # saves the dictionary into memory
         # Note that we could have passed 
@@ -121,13 +121,13 @@ class ModelTraining(object):
         predicting"""
 
         # run hierachical clustering
-        sys.stdout.write('Training (clusters)...')
+        sys.stdout.write('Training (clusters)...'); sys.stdout.flush()
         model_options_dict = {'n_clusters': 50}
         model = find_clusters_train(
             self.__vector, model_type='hierarchical',
             model_options_dict=model_options_dict,
-            path_out=path_out, n_samples=None)
-        sys.stdout.write('done.\n')
+            path_out=path_out, n_samples=60000)
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
     def get_vector(self):
         return self.__vector

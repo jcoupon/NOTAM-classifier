@@ -25,12 +25,12 @@ class Cleaning(object):
         """
 
         # read file
-        sys.stdout.flush(); sys.stdout.write('Reading file...')
+        sys.stdout.write('Reading file...'); sys.stdout.flush()
         self.__df = pd.read_csv(path, sep=';').set_index('item_id')        
 
         # save sample length
         self.N = len(self.__df)
-        sys.stdout.flush(); sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
+        sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N)); sys.stdout.flush()
 
     def split(self):
         """Split the NOTAMs into 
@@ -38,12 +38,12 @@ class Cleaning(object):
         """
 
         # unstructured part
-        sys.stdout.flush(); sys.stdout.write('Splitting items...')
+        sys.stdout.write('Splitting items...'); sys.stdout.flush()
         self.__df['text'] = self.__df['fulltext'].apply(get_text)
  
         # structured part
         # TODO
-        sys.stdout.flush(); sys.stdout.write('done.\n')
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
     def clean(self):
         """Final step: clean the items 
@@ -60,10 +60,10 @@ class Cleaning(object):
         """
 
         # process unstructured part (replace numbers, etc.)
-        sys.stdout.flush(); sys.stdout.write('Cleaning unstructured part...')
+        sys.stdout.write('Cleaning unstructured part...'); sys.stdout.flush()
         self.__df['text_clean'] = self.__df['text']\
             .apply(lambda x:clean_unstructured(x, self.__acronyms_dict))
-        sys.stdout.flush(); sys.stdout.write('done.\n')
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
         # add the "important" column
         # which is the inverse of the 
@@ -78,9 +78,9 @@ class Cleaning(object):
         return self.__df
 
     def write(self, path):
-        sys.stdout.write('Writting file...')
+        sys.stdout.write('Writting file...'); sys.stdout.flush()
         self.__df.to_csv(path)
-        sys.stdout.write('done.\n')
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
 
 def get_text(NOTAM):
