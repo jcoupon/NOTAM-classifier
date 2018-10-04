@@ -218,7 +218,6 @@ def cluster_train(
             model = AgglomerativeClustering(**model_options_dict)
         model.fit(X[choice])
 
-
     # persist model
     if path_out is not None:
         with open(path_out, 'wb') as file_out:
@@ -465,5 +464,9 @@ def get_cluster_purity(labels, classes):
         
         #print(N[i], '{0:.2f}'.format(purity[i]))
 
+    # fraction of pure cluster weighted by 
+    # NOTAM counts, i.e. fraction of 
+    # purely classified NOTAMs (=precision)
+    f_pure = sum(N[purity > 0.8])/sum(N)
 
-    return N, purity
+    return N, purity, f_pure
