@@ -115,7 +115,7 @@ class ModelTraining(object):
             n_dim=n_dim, random_state=None)
 
     def cluster_train(self, path_out='model.pickle'):
-        """ Train clusters with hierachical clustering 
+        """ Train clusters with hierarchical clustering 
         and persist model as the vector plus labels 
         that will be used with k-NN for testing and 
         predicting"""
@@ -126,7 +126,7 @@ class ModelTraining(object):
         model = find_clusters_train(
             self.__vector, model_type='hierarchical',
             model_options_dict=model_options_dict,
-            path_out=path_out, n_samples=1000)
+            path_out=path_out, n_samples=None)
         sys.stdout.write('done.\n')
 
     def get_vector(self):
