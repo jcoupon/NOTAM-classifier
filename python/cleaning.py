@@ -12,21 +12,24 @@ class Cleaning(object):
     on NOTAM data.
     """
 
-    def __init__(self):
+    def __init__(self, path=None, sep=','):
         """Options
         """
 
         self.__acronyms_dict = load_acronyms_dict()
 
+        # read the data if a path is given
+        if path is not None:
+            self.read(path, sep=sep)
 
-    def read(self, path):
+    def read(self, path, sep=','):
         """Read a csv file and
         load it into Pandas data frame
         """
 
         # read file
         sys.stdout.write('Reading file...'); sys.stdout.flush()
-        self.__df = pd.read_csv(path, sep=';').set_index('item_id')        
+        self.__df = pd.read_csv(path, sep=sep).set_index('item_id')        
 
         # save sample length
         self.N = len(self.__df)
@@ -66,7 +69,7 @@ class Cleaning(object):
         sys.stdout.write('done.\n'); sys.stdout.flush()
 
         # add the "important" column
-        # which is the inverse of the 
+        # which is the inverse of the
         # "supress" column
         self.__df['important'] = self.__df['supress'] == 0
 

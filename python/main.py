@@ -59,9 +59,12 @@ def main(args):
 
     if 'clean' in tasks:
         clean(input_path, output_path+'_clean.csv')
+        # the output file path becomes the intput 
+        # file path for the next step
+        input_path = output_path+'_clean.csv'
 
     if 'train' in tasks:
-        train(output_path+'_clean.csv', output_path+'_model.pickle')
+        train(input_path, output_path+'_model.pickle', n_samples=args.n_samples)
 
 
     return
@@ -78,11 +81,8 @@ Main functions
 
 def clean(input_path, output_path):
 
-    # create cleaner object
-    cleaner = cleaning.Cleaning()
-
-    # read the data
-    cleaner.read(input_path)
+    # create cleaner object and read the data
+    cleaner = cleaning.Cleaning(path=input_path, sep=args.sep)
 
     # split the NOTAM into items (Q, A, B, C, etc.) 
     cleaner.split()
@@ -95,7 +95,7 @@ def clean(input_path, output_path):
 
     return
 
-def train(input_path, output_path):
+def train(input_path, output_path, n_samples=None):
 
     # create model training object
     model_train = modelling.ModelTraining(input_path)
@@ -108,7 +108,7 @@ def train(input_path, output_path):
     model_train.vectorize()
 
     # train and persist model
-    model_train.cluster_train(output_path)
+    model_train.cluster_train(output_path, n_samples=n_samples)
 
     return
 
@@ -152,6 +152,10 @@ if __name__ == "__main__":
         help='basename of the output file path. It will write a csv file with cleaned NOTAMs, features and classification (group and importance) at each stage of the process. Default: input file path with the task name appended to the name.')
 
     parser.add_argument('-seed', default=None, type=int, help='random seed')
+
+    parser.add_argument('-sep', default=',', help='Separator for the input file')
+
+    parser.add_argument('-n_samples', default=None, type=int, help='Number of samples for the training')
 
     args = parser.parse_args()
 

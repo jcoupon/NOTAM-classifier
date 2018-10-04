@@ -114,10 +114,10 @@ class ModelTraining(object):
             self.__df, PATH_VOCABULARY=PATH_VOCABULARY, 
             n_dim=n_dim, random_state=None)
 
-    def cluster_train(self, path_out='model.pickle'):
+    def cluster_train(self, path_out='model.pickle', n_samples=None):
         """ Train clusters with hierarchical clustering 
-        and persist model as the vector plus labels 
-        that will be used with k-NN for testing and 
+        and persist model as the vector plus labels
+        that will be used with k-NN for testing and
         predicting"""
 
         # run hierachical clustering
@@ -126,7 +126,7 @@ class ModelTraining(object):
         model = find_clusters_train(
             self.__vector, model_type='hierarchical',
             model_options_dict=model_options_dict,
-            path_out=path_out, n_samples=60000)
+            path_out=path_out, n_samples=n_samples)
         sys.stdout.write('done.\n'); sys.stdout.flush()
 
     def get_vector(self):
@@ -228,7 +228,7 @@ def find_clusters_train(
         # persist model
         if path_out is not None:
             with open(path_out, 'wb') as file_out:
-                pickle.dump((X, model.labels_), file_out)
+                pickle.dump((X[choice], model.labels_), file_out)
     
     return model
 
@@ -242,6 +242,7 @@ def find_clusters_predict(
 
     # limit the number of NOTAMs for the test
     if n_samples is not None:
+        n_samples = min(n_samples, len(X))
         choice = np.random.randint(X.shape[0], size=n_samples)
     else:
         choice = range(len(X))
