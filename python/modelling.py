@@ -56,7 +56,7 @@ class ModelTraining(object):
 
         # read file
         sys.stdout.write('Reading file...')
-        self.__df = pd.read_csv(path, sep=',').set_index('item_id')      
+        self.__df = pd.read_csv(path, sep=',').set_index('item_id')   
 
         # save sample length
         self.N = len(self.__df)
@@ -114,7 +114,7 @@ class ModelTraining(object):
             self.__df, PATH_VOCABULARY=PATH_VOCABULARY, 
             n_dim=n_dim, random_state=None)
 
-    def cluster_train(self, path_out='model.pickle', n_samples=None):
+    def cluster_train(self, path_out='model.pickle', n_clusters=50, n_samples=None):
         """ Train clusters with hierarchical clustering 
         and persist model as the vector plus labels
         that will be used with k-NN for testing and
@@ -122,7 +122,7 @@ class ModelTraining(object):
 
         # run hierachical clustering
         sys.stdout.write('Training (clusters)...'); sys.stdout.flush()
-        model_options_dict = {'n_clusters': 50}
+        model_options_dict = {'n_clusters': n_clusters}
         model = find_clusters_train(
             self.__vector, model_type='hierarchical',
             model_options_dict=model_options_dict,
@@ -290,7 +290,7 @@ def break_lines(input_text, stride=60):
 def plot_clusters(
         X, labels, label_names=None, text=None, random_state=None, 
         html_out='clusters.html', interactive=True, do_break_lines=True,
-        do_decompose=False):
+        do_decompose=False, emphasize_label=None):
     """Plot the clusters with their labels
     using plotly. If plotly is not available,
     fall back to non-interactive matplotlib plot
@@ -342,12 +342,17 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
                 'Plotting {0} points with label {1}\n'.format(
                     sum(select), label_names[n]))
 
+            size = 5
+            if emphasize_label is not None and emphasize_label != n:
+                size = 1
+
+
             trace = go.Scatter(
                 x = X_decomposed[:, 0][select],
                 y = X_decomposed[:, 1][select],
                 name = label_names[n],
                 mode = 'markers',
-                marker = dict(size = 5,),
+                marker = dict(size = size,),
                 text = text[select],
                 textposition='top left',
 
