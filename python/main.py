@@ -100,15 +100,12 @@ def train(input_path, output_path, n_samples=None):
     # create model training object
     model_train = modelling.ModelTraining(input_path)
 
-    # build a vocabulary and saves it in python/
-    model_train.build_vocabulary()
-
     # vectorize the NOTAMs and do
     # dimensionality reduction
     model_train.vectorize()
 
     # train and persist model
-    model_train.cluster_train(output_path, n_samples=n_samples)
+    model_train.cluster_train(output_path.replace('.pickle', '_cluster.pickle'), n_samples=n_samples)
 
     return
 

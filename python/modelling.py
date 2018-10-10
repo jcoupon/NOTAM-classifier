@@ -13,8 +13,8 @@ from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.decomposition import TruncatedSVD
 from sklearn.neighbors import KNeighborsClassifier
 
-
-
+from scipy.spatial.distance import pdist
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 
 # python path where the script is located
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +25,11 @@ PATH_VOCABULARY = DIR_PATH+'/vocabulary_dict.csv'
 # random seed
 RANDOM_STATE = None
 
+# output file for the cluster model
 CLUSTER_MODEL_PATH = DIR_PATH+'cluster_model'
+
+# default number of dimension for the word vector
+N_DIM = 50
 
 """
 
@@ -37,14 +41,14 @@ Class to train the model
 
 class ModelTraining(object):
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, n_dim=N_DIM):
         """Initialization
         """
 
         self.__vocabulary_dict = None
 
         # default number of dimensions for the word vector
-        self.__n_dim = 50
+        self.__n_dim = n_dim
 
         # read the data if a path is given
         if path is not None:
@@ -137,12 +141,12 @@ class ModelPredict(object):
     on NOTAM data.
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, n_dim=N_DIM):
         """Initialization
         """
 
         # default number of dimensions for the word vector
-        self.__n_dim = 50
+        self.__n_dim = n_dim
 
         # read the data if a path is given
         if path is not None:
@@ -258,6 +262,23 @@ def find_clusters_train(
     else:
         choice = range(len(X))
 
+    if method == 'hierarchical':
+        labels = None
+
+        distance_matrix = pdist(X[choice], metric='cosine')
+        Z = linkage(distance_matrix, metric='cosine')
+
+        # persist model and linkage matrix
+        if path_out is not None:
+            with open(path_out.replace('.pickle', '_linkage.pickle'), 'wb') as file_out:
+                pickle.dump(Z, file_out)
+            #with open(path_out, 'wb') as file_out:
+            #    pickle.dump(model, file_out)
+
+        
+        return labels
+
+
     if method == 'kmeans':
         if method_options_dict is None:
             # Default parameters
@@ -266,12 +287,18 @@ def find_clusters_train(
             model = KMeans(**method_options_dict)
         model.fit(X[choice])
 
+        labels = model.labels_
+
         # persist model
         if path_out is not None:
             with open(path_out, 'wb') as file_out:
                 pickle.dump(model, file_out)
 
-    if method == 'hierarchical':
+        return labels
+
+
+    if method == 'hierarchical_scikit_learn':
+
         if method_options_dict is None:
             # Default parameters
             model = AgglomerativeClustering(n_clusters=7)
@@ -279,13 +306,16 @@ def find_clusters_train(
             model = AgglomerativeClustering(**method_options_dict)
         model.fit(X[choice])
 
+        labels = model.labels_
+
         # persist model
         if path_out is not None:
             with open(path_out, 'wb') as file_out:
                 pickle.dump((X[choice], model.labels_), file_out)
     
-    return model
+        return labels
 
+    raise Exception('find_clusters_train(): method {} not recognized'.format(method))
 
 def find_clusters_predict(
         X, path_in, n_samples=None, persist=None, 
@@ -310,6 +340,8 @@ def find_clusters_predict(
         # evaluate labels
         labels = model.predict(X[choice])
 
+        return labels
+
     if method == 'hierarchical': 
 
         # read model
@@ -320,7 +352,10 @@ def find_clusters_predict(
         model.fit(X_train, labels_train)
         labels = model.predict(X[choice])
 
-    return labels
+        return labels
+
+    raise Exception('find_clusters_predict(): method {} not recognized'.format(method))
+
 
 
 def break_lines(input_text, stride=60):
@@ -542,7 +577,10 @@ def vectorize(
     """
 
     # get the NOTAMS as a corpus
-    corpus = df[text_col_name].fillna('').values
+    # replace empty NOTAMs by 'empty'
+    # so that their cosine distance is
+    # not 0
+    corpus = df[text_col_name].fillna('empty_NOTAM').values
 
     if method == 'BOW':
         # compute word_counts as a
@@ -609,7 +647,7 @@ def vectorize(
 
         return texts
 
-    raise Exception('vectorize: method {} not recognized'.format(method))
+    raise Exception('vectorize(): method {} not recognized'.format(method))
 
 
 def tsne(vector, n_dim=2, random_state=None, perplexity=100):
