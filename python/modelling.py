@@ -249,11 +249,13 @@ class ModelPredict(object):
 
 
 def find_clusters_train(
-        X, n_samples=None, persist=None, 
+        X, n_samples=None,
         method='hierarchical', method_options_dict=None, 
         path_out=None, random_state=None):
     """Find clusters using scikit learn
-    clustering algorithms
+    clustering algorithms.
+
+    Return the labels
     """
 
     # limit the number of NOTAMs for the training
@@ -263,20 +265,19 @@ def find_clusters_train(
         choice = range(len(X))
 
     if method == 'hierarchical':
-        labels = None
 
-        distance_matrix = pdist(X[choice], metric='cosine')
-        Z = linkage(distance_matrix, metric='cosine')
+        Z = linkage(X[choice], method='average', metric='cosine')
+        # Z = linkage(X[choice], method='ward')
+
+        d = np.quantile(Z[:,2], 0.995)
+        labels = fcluster(Z, d, criterion='distance')
 
         # persist model and linkage matrix
         if path_out is not None:
             with open(path_out.replace('.pickle', '_linkage.pickle'), 'wb') as file_out:
-                pickle.dump(Z, file_out)
-            #with open(path_out, 'wb') as file_out:
-            #    pickle.dump(model, file_out)
-
+                pickle.dump((labels, Z), file_out)
         
-        return labels
+        return labels, Z
 
 
     if method == 'kmeans':
@@ -295,7 +296,6 @@ def find_clusters_train(
                 pickle.dump(model, file_out)
 
         return labels
-
 
     if method == 'hierarchical_scikit_learn':
 
@@ -318,10 +318,10 @@ def find_clusters_train(
     raise Exception('find_clusters_train(): method {} not recognized'.format(method))
 
 def find_clusters_predict(
-        X, path_in, n_samples=None, persist=None, 
-        method='hierarchical', method_options_dict=None):
+        X, path_in, n_samples=None,
+        method='k-NN', method_options_dict=None):
     """Find clusters using scikit learn
-    clustering algorithms
+    clustering or nearest neighbour algorithms
     """
 
     # limit the number of NOTAMs for the test
@@ -342,7 +342,7 @@ def find_clusters_predict(
 
         return labels
 
-    if method == 'hierarchical': 
+    if method == 'k-NN': 
 
         # read model
         with open(path_in, 'rb') as file_in:
@@ -355,7 +355,6 @@ def find_clusters_predict(
         return labels
 
     raise Exception('find_clusters_predict(): method {} not recognized'.format(method))
-
 
 
 def break_lines(input_text, stride=60):
@@ -647,6 +646,12 @@ def vectorize(
 
         return texts
 
+    if method == 'NMF':
+        raise NotImplemented('NMF')
+
+    if method == 'LDA':
+        raise NotImplemented('LDA')
+
     raise Exception('vectorize(): method {} not recognized'.format(method))
 
 
@@ -660,7 +665,7 @@ def tsne(vector, n_dim=2, random_state=None, perplexity=100):
     return result
 
 
-def get_cluster_purity(labels, classes):
+def get_cluster_purity(labels, classes, min_purity=0.8):
     """Compute the purity of clusters
     given labels and classes.
     
@@ -670,39 +675,31 @@ def get_cluster_purity(labels, classes):
 
     """
 
-    # number of unique labels
-    label_types = np.unique(labels)
-    n_labels = len(label_types)
+    # check that the number of 
+    # unique classes is less than 2
+    classes_types = np.unique(classes)
+    if len(classes_types) > 2:
+        raise Exception('get_cluster_purity(): the number of classes should not exceed 2.')
 
-    # number of unique classes
-    class_types = np.unique(classes)
-    #n_c = len(class_types)
+    # define the purity function 
+    def purity(row):
+        """Compute the ratio between class count and 
+        total count. Then pick the class with the highest
+        fraction."""
+        ratio = row[('class', 'sum')]/row[('class', 'count')] 
+        return max(1.0-ratio, ratio)    
 
-    # initialize results
-    N = np.zeros(n_labels)
-    purity = np.zeros(n_labels)
+    # compute the class ratio after grouping by cluster label
+    df = pd.DataFrame.from_dict({'label':labels, 'class':classes})
+    df_counts = df.groupby(by='label').agg({'class': ['sum', 'count']})
 
-    # main loop
-    for i,l in enumerate(label_types):
-
-        select = labels == l
-        N[i] = sum(select)
-
-        fractions = []
-        for j,c in enumerate(class_types):
-            f = sum(classes[select] == c)/N[i]
-            fractions.append(f)
-
-        purity[i] = max(fractions)
-        
-        #print(N[i], '{0:.2f}'.format(purity[i]))
+    # purity and number per cluster
+    purity = df_counts.apply(purity, axis=1).values
+    N = df_counts[('class', 'count')].values
 
     # fraction of pure cluster weighted by 
     # NOTAM counts, i.e. fraction of 
     # purely classified NOTAMs (=precision)
-    f_pure = sum(N[purity > 0.8])/sum(N)
+    f_pure = sum(N[purity > min_purity])/sum(N)
 
     return N, purity, f_pure
-
-
-
