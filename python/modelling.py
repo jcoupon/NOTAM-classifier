@@ -10,13 +10,14 @@ from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans, AgglomerativeClustering
-from sklearn.decomposition import TruncatedSVD, LatentDirichletAllocation
+from sklearn.decomposition import TruncatedSVD, LatentDirichletAllocation, NMF
 from sklearn.neighbors import KNeighborsClassifier
 
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 
 from gensim import corpora, models, similarities
+from collections import defaultdict
 
 # python path where the script is located
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -24,11 +25,14 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 # default vocabulary path
 PATH_VOCABULARY = DIR_PATH+'/vocabulary_dict.csv'
 
+# output file for the cluster model
+PATH_VECTORIZE_MODEL = DIR_PATH+'/vectorize_model.pickle'
+
 # random seed
 RANDOM_STATE = None
 
 # output file for the cluster model
-CLUSTER_MODEL_PATH = DIR_PATH+'cluster_model'
+PATH_CLUSTER_MODEL = DIR_PATH+'/cluster_model'
 
 # default number of dimension for the word vector
 N_DIM = 50
@@ -87,7 +91,7 @@ class ModelTraining(object):
 
 
     def cluster_train(
-            self, path_out=CLUSTER_MODEL_PATH,
+            self, path_out=PATH_CLUSTER_MODEL,
             method='hierarchical', n_clusters=50, 
             random_state=RANDOM_STATE, n_samples=None):
         """ Train clusters with hierarchical clustering 
@@ -106,7 +110,7 @@ class ModelTraining(object):
         sys.stdout.write('done.\n'); sys.stdout.flush()
 
     def cluster_predict(
-            self, path_in=CLUSTER_MODEL_PATH, 
+            self, path_in=PATH_CLUSTER_MODEL, 
             method='hierarchical'):
         # run clustering
         sys.stdout.write('Predicting (clusters)...'); sys.stdout.flush()
@@ -182,7 +186,7 @@ class ModelPredict(object):
         return
 
     def cluster_predict(
-            self, path_in=CLUSTER_MODEL_PATH, 
+            self, path_in=PATH_CLUSTER_MODEL, 
             method='hierarchical'):
         # run clustering
         sys.stdout.write('Predicting (clusters)...'); sys.stdout.flush()
@@ -191,7 +195,6 @@ class ModelPredict(object):
             n_samples=None)
         self.__df['cluster_labels'] = self.__cluster_labels
         sys.stdout.write('done.\n'); sys.stdout.flush()
-
 
     def visualize(
             self, method='t-SNE', random_state=None, 
@@ -519,7 +522,8 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
     return
 
 
-def build_vocabulary(corpus, path=PATH_VOCABULARY):
+def build_vocabulary(
+        corpus, path=PATH_VOCABULARY, method='scikit-learn', min_freq=0):
     """Build a vocabulary to be used for the 
     word count step. The input file is a csv file
     containing a column "text_clean" out of which 
@@ -532,28 +536,55 @@ def build_vocabulary(corpus, path=PATH_VOCABULARY):
     See http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html
     """
 
-    vectorizer = CountVectorizer(stop_words='english')
+    if method == 'scikit-learn':
+        vectorizer = CountVectorizer(stop_words='english')
 
-    # compute word_counts as a
-    # sparse matrix
-    vectorizer.fit(corpus)
+        # compute word_counts as a
+        # sparse matrix
+        vectorizer.fit(corpus)
 
-    # reset the indices so that there is 
-    # no gap between 0 and the end
-    vocabulary = {}
-    for i,(k,v) in enumerate(vectorizer.vocabulary_.items()):
-        vocabulary[k] = i
+        # reset the indices so that there is 
+        # no gap between 0 and the end
+        vocabulary = {}
+        for i,(k,v) in enumerate(vectorizer.vocabulary_.items()):
+            vocabulary[k] = i
 
-    # write dictionary
-    if path is not None:
-        pd.DataFrame\
-            .from_dict(vocabulary,  orient="index")\
-            .to_csv(path, header=False)
+        # write dictionary
+        if path is not None:
+            pd.DataFrame\
+                .from_dict(vocabulary,  orient="index")\
+                .to_csv(path, header=False)
 
-    return vocabulary
+        return vocabulary
+
+    if method == 'gensim':
+
+        # remove common words and tokenize
+        # all punctuation and special characters
+        # must have been removed during cleaning
+        stoplist = set('for a of the and to in'.split())
+        texts = [[word for word in document.lower().split() if word not in stoplist]
+                for document in corpus]
+
+        # replace words that appear only rarely
+        if min_freq > 0:
+            frequency = defaultdict(int)
+            for text in texts:
+                for token in text:
+                    frequency[token] += 1
+            
+            texts = [['rare_token' if frequency[token] <= min_freq else token for token in text]
+                    for text in texts]
+
+        vocabulary = corpora.Dictionary(texts)
+        vocabulary.save_as_text(PATH_VOCABULARY)
+
+        return vocabulary
+
+    raise Exception('build_vocabulary(): method {} not recognized'.format(method))
 
 
-def read_vocabulary(path=PATH_VOCABULARY):
+def read_vocabulary(path=PATH_VOCABULARY, method='scikit-learn'):
     """Read the vocabulary from path and return a dictionary.
 
     Function shared by all classes in this script.
@@ -565,26 +596,49 @@ def read_vocabulary(path=PATH_VOCABULARY):
     See http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html
     """
 
-    # the to_dict method returns a nested dictionary 
-    # where the first layer is for the multiple columns (hence the [1]).
-    # we force Pandas to keep "nan" as a string as it may 
-    # exist in the NOTAMs
-    dictionary = pd.read_csv(
-        path, header=None, index_col=0, 
-        keep_default_na=False, na_values=['']).to_dict()[1]
-    N = len(list(dictionary.keys()))
+    if method == 'scikit-learn':
 
-    return dictionary
+        # the to_dict method returns a nested dictionary 
+        # where the first layer is for the multiple columns (hence the [1]).
+        # we force Pandas to keep "nan" as a string as it may 
+        # exist in the NOTAMs
+        vocabulary = pd.read_csv(
+            path, header=None, index_col=0, 
+            keep_default_na=False, na_values=['']).to_dict()[1]
+        
+        # N = len(list(dictionary.keys()))
+
+        return vocabulary
+
+    if method == 'gensim':
+
+        vocabulary = corpora.Dictionary.load_from_text(PATH_VOCABULARY)
+
+        return vocabulary
+
+
+    raise Exception('read_vocabulary(): method {} not recognized'.format(method))
 
 
 def vectorize(
-        df, path_vocabulary=PATH_VOCABULARY, do_build_vocabulary=True, 
-        method='BOW', text_col_name='text_clean', n_dim=50, 
+        df, path_vocabulary=PATH_VOCABULARY, do_train=True,
+        path_out = PATH_VECTORIZE_MODEL, 
+        method='BOW-SVD', text_col_name='text_clean', n_dim=50, 
         random_state=None):
-    """Vectorize the NOTAM and reduce the 
+    """Vectorize the NOTAM and reduce the
     dimensionality. First load a dictionary
     then count the words and run dimensionality
     reduction.  
+
+    Methods:
+    - TFIDF-SVD
+    - TFIDF-NMF
+    - BOW-SVD
+    - BOW-LDA
+
+
+    See http://scikit-learn.org/stable/auto_examples/applications/plot_topics_extraction_with_nmf_lda.html#sphx-glr-auto-examples-applications-plot-topics-extraction-with-nmf-lda-py
+    
     """
 
     # get the NOTAMS as a corpus
@@ -593,98 +647,153 @@ def vectorize(
     # not 0
     corpus = df[text_col_name].fillna('empty_NOTAM').values
 
-    if method == 'BOW':
-        # compute word_counts as a
-        # sparse matrix
-        sys.stdout.write('Vectorizing the NOTAMs...')
+    sys.stdout.write('Vectorizing NOTAMs...')
 
-        # build or load the vocabulary
-        # usually the dictionary is built during 
-        # the training and saved
-        if do_build_vocabulary:
-            vocabulary_dict = build_vocabulary(corpus, path=path_vocabulary)
+    if method in ['TFIDF-SVD', 'TFIDF-NMF', 'BOW-SVD', 'BOW-LDA']:
+
+        if do_train:
+            # build the vocabulary
+            vocabulary_dict = build_vocabulary(
+                corpus, path=path_vocabulary, method='scikit-learn')
+
+            # compute word_counts as a sparse matrix
+            if method.split('-')[0] == 'BOW':
+                vectorizer = CountVectorizer(
+                    stop_words='english', vocabulary=vocabulary_dict)
+            if method.split('-')[0] == 'TFIDF':
+                vectorizer = TfidfVectorizer(
+                    stop_words='english', vocabulary=vocabulary_dict)
+
+            word_counts = vectorizer.fit_transform(corpus)
+
+            # vectorize word counts
+            # reduce dimensionality using linear PCA-like
+            # technique called TruncatedSVD 
+            # -> efficient with sparse matrices
+            if method.split('-')[1] == 'SVD':
+                decomposer = TruncatedSVD(n_components=n_dim, random_state=random_state)
+            if method.split('-')[1] == 'LDA':
+                decomposer = LatentDirichletAllocation(n_components=n_dim, random_state=random_state)
+            if method.split('-')[1] == 'NMF':
+                decomposer = NMF(n_components=n_dim, random_state=random_state)
+    
+            decomposer.fit(word_counts)
+
+            # persist models
+            if path_out is not None:
+                with open(path_out, 'wb') as file_out:
+                    pickle.dump((vectorizer, decomposer), file_out)
+
         else:
-            vocabulary_dict = read_vocabulary(path_vocabulary)
+            # can load the dictionary if necessary
+            #vocabulary_dict = read_vocabulary(
+            #    path_vocabulary, method='scikit-learn')
 
-        vectorizer = CountVectorizer(stop_words='english', vocabulary=vocabulary_dict)
-        word_counts = vectorizer.transform(corpus)
+            if path_out is not None:
+                with open(path_out, 'rb') as file_in:
+                    vectorizer, decomposer = pickle.load(file_in)            
+            else:
+                raise Exception(
+                    'vectorize(): a model file must be provided when predicting (do_train = False).')
+        
+            word_counts = vectorizer.transform(corpus)
+        
+        vector = decomposer.transform(word_counts)
+
         sys.stdout.write('done.\n')
-
-        # vectorize word counts
-        # reduce dimensionality using linear PCA
-        # use TruncatedSVD which is really efficient
-        # with sparse matrices
-        sys.stdout.write('Performing dimensionality reduction...')
-        decomposer = TruncatedSVD(n_components=n_dim, random_state=random_state)
-        vector = decomposer.fit_transform(word_counts)
-        sys.stdout.write('done.\n')
-
         return vector
 
-    if method == 'TF-IDF':
-        # compute word_counts as a
-        # sparse matrix
-        sys.stdout.write('Vectorizing the NOTAMs...')
-        vectorizer = TfidfVectorizer(stop_words='english')
-        word_counts = vectorizer.fit_transform(corpus)
+    if method in ['word2vec']:
+
+        # see https://medium.com/ml2vec/topic-modeling-is-an-unsupervised-learning-approach-to-clustering-documents-to-discover-topics-fdfbf30e27df
+        # and https://medium.com/@sherryqixuan/topic-modeling-and-pyldavis-visualization-86a543e21f58
+        if do_train:
+            # build the vocabulary
+            vocabulary_dict = build_vocabulary(
+                corpus, path=path_vocabulary, method='gensim')
+            
+            texts = [text.lower().split() for text in corpus]
+            word_counts = [vocabulary_dict.doc2bow(text) for text in texts]
+
+            if method == 'word2vec':
+                model = models.Word2Vec(texts, min_count=1, size=n_dim) #, id2word=vocabulary_dict, num_topics=n_dim)
+                vectors = combine_word_vectors(model, texts)
+        
+                # persist model
+                if path_out is not None:
+                    with open(path_out, 'wb') as file_out:
+                        pickle.dump(model, file_out)
+
+                sys.stdout.write('done.\n')
+                return vectors
+
+            if method == 'LDA':
+
+                model = models.LdaModel(
+                    word_counts, id2word=vocabulary_dict, num_topics=n_dim)
+
+                # TODO
+                n_samples = len(word_counts)
+                vectors = np.zeros((n_samples, n_dim))
+                for i,wc in enumerate(word_counts):
+                    v = np.array(model[wc]) 
+                    vectors[i, v[:, 0].astype(int)] = v[:, 1]  
+                
+                sys.stdout.write('done.\n')
+                return vectors
+
+        else:
+            # load the dictionary
+            vocabulary_dict = read_vocabulary(
+                path_vocabulary, method='gensim')
+
+            if path_out is not None:
+                with open(path_out, 'rb') as file_in:
+                    model = pickle.load(file_in)            
+            else:
+                raise Exception(
+                    'vectorize(): a model file must be provided when predicting (do_train = False).')
+
+            texts = [text.lower().split() for text in corpus]
+            word_counts = [vocabulary_dict.doc2bow(text) for text in texts]
+
+            if method == 'word2vec':
+                vectors = combine_word_vectors(model, texts)
+
+                sys.stdout.write('done.\n')
+                return vectors
+
+    
+
+
         sys.stdout.write('done.\n')
-
-        # vectorize word counts
-        # reduce dimensionality using linear PCA
-        # use TruncatedSVD which is really efficient
-        # with sparse matrices
-        sys.stdout.write('Performing dimensionality reduction...')
-        decomposer = TruncatedSVD(n_components=n_dim, random_state=random_state)
-        vector = decomposer.fit_transform(word_counts)
-        sys.stdout.write('done.\n')
-
-        return vector
-
-    if method == 'word2vec':
-
-        # remove common words and tokenize
-        stoplist = set('for a of the and to in'.split())
-        texts = [[word for word in document.lower().split() if word not in stoplist]
-                for document in corpus]
-        # remove words that appear only once
-        from collections import defaultdict
-        frequency = defaultdict(int)
-        for text in texts:
-            for token in text:
-                frequency[token] += 1
-
-        texts = [[token for token in text if frequency[token] > 1] for text in texts]
+        return None
 
 
-        return texts
-
-    if method == 'LDA':
-
-        # remove common words and tokenize
-        stoplist = set('for a of the and to in'.split())
-        texts = [[word for word in document.lower().split() if word not in stoplist]
-                for document in corpus]
-        # remove words that appear only once
-        from collections import defaultdict
-        frequency = defaultdict(int)
-        for text in texts:
-            for token in text:
-                frequency[token] += 1
-        texts = [[token for token in text if frequency[token] > 1] for text in texts]
-
-        dictionary = corpora.Dictionary(texts)
-        corpus = [dictionary.doc2bow(text) for text in corpus]
-
-
-
-        print(corpus)
-
-
-
-    if method == 'NMF':
-        pass        
 
     raise Exception('vectorize(): method {} not recognized'.format(method))
+
+
+def combine_word_vectors(model, texts):
+    """Average word vector for texts"""
+
+    vectors = np.zeros((len(texts), model.vector_size))
+    vector = np.zeros(model.vector_size)
+
+    for i,c in enumerate(texts):
+        vector = 0
+        n_words = 0
+        for word in c:
+            try:
+                vector += model.wv[word]
+                n_words += 1
+            except:
+                pass
+        if n_words > 0:
+            vectors[i, :] = vector/n_words
+
+    return vectors
+
 
 
 def tsne(vector, n_dim=2, random_state=None, perplexity=100):
