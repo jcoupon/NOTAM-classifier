@@ -10,11 +10,13 @@ from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans, AgglomerativeClustering
-from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import TruncatedSVD, LatentDirichletAllocation
 from sklearn.neighbors import KNeighborsClassifier
 
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+from gensim import corpora, models, similarities
 
 # python path where the script is located
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -266,7 +268,8 @@ def find_clusters_train(
 
     if method == 'hierarchical':
 
-        Z = linkage(X[choice], method='average', metric='cosine')
+        Z = linkage(X[choice], **method_options_dict)
+        # Z = linkage(X[choice], method='average', metric='cosine')
         # Z = linkage(X[choice], method='ward')
 
         d = np.quantile(Z[:,2], 0.995)
@@ -274,8 +277,8 @@ def find_clusters_train(
 
         # persist model and linkage matrix
         if path_out is not None:
-            with open(path_out.replace('.pickle', '_linkage.pickle'), 'wb') as file_out:
-                pickle.dump((labels, Z), file_out)
+            with open(path_out, 'wb') as file_out:
+                pickle.dump((X, labels, Z), file_out)
         
         return labels, Z
 
@@ -319,9 +322,15 @@ def find_clusters_train(
 
 def find_clusters_predict(
         X, path_in, n_samples=None,
-        method='k-NN', method_options_dict=None):
+        method='hierarchical', dist=None, 
+        method_options_dict=None):
     """Find clusters using scikit learn
-    clustering or nearest neighbour algorithms
+    clustering or nearest neighbour algorithms.
+
+    dist is used only with method='hierarchical'
+    and allows to define the cluster distance 
+    to re-compute the trained clusters from the 
+    linkage matrix (Z) 
     """
 
     # limit the number of NOTAMs for the test
@@ -342,11 +351,14 @@ def find_clusters_predict(
 
         return labels
 
-    if method == 'k-NN': 
+    if method == 'hierarchical': 
 
         # read model
         with open(path_in, 'rb') as file_in:
-            X_train, labels_train = pickle.load(file_in)
+            X_train, labels_train, Z = pickle.load(file_in)
+
+        if dist is not None:
+            labels_train = fcluster(Z, dist, criterion='distance')
 
         model = KNeighborsClassifier(n_neighbors=1)
         model.fit(X_train, labels_train)
@@ -646,11 +658,31 @@ def vectorize(
 
         return texts
 
-    if method == 'NMF':
-        raise NotImplemented('NMF')
-
     if method == 'LDA':
-        raise NotImplemented('LDA')
+
+        # remove common words and tokenize
+        stoplist = set('for a of the and to in'.split())
+        texts = [[word for word in document.lower().split() if word not in stoplist]
+                for document in corpus]
+        # remove words that appear only once
+        from collections import defaultdict
+        frequency = defaultdict(int)
+        for text in texts:
+            for token in text:
+                frequency[token] += 1
+        texts = [[token for token in text if frequency[token] > 1] for text in texts]
+
+        dictionary = corpora.Dictionary(texts)
+        corpus = [dictionary.doc2bow(text) for text in corpus]
+
+
+
+        print(corpus)
+
+
+
+    if method == 'NMF':
+        pass        
 
     raise Exception('vectorize(): method {} not recognized'.format(method))
 
