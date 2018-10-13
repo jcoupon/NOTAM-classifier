@@ -43,31 +43,45 @@ def main(args):
     """ Main function
     """
 
-    tasks = args.tasks.split(',')
-
-    input_path = args.input
+    path_in = args.path_in
 
     # output file path
     if args.output is None:
         # keep the path basename (without the extension)
         try:
-            output_path = ''.join(input_path.split('.')[:-1])
+            path_out, file_extension = os.path.splitext(path_in) #''.join(path_in.split('.')[:-1])
         except:
             # if the input file has no extension
             # keep it as is
-            output_path = input_path
+            path_out = path_in
+    
+    if args.task == 'clean':
+        clean(
+            path_in, 
+            path_out+'_clean.csv' if args.output is None else args.output,
+            )
 
-    if 'clean' in tasks:
-        clean(input_path, output_path+'_clean.csv')
-        # the output file path becomes the intput 
-        # file path for the next step
-        input_path = output_path+'_clean.csv'
+        return
 
-    if 'train' in tasks:
-        train(input_path, output_path+'_model.pickle', n_samples=args.n_samples)
+    if args.task == 'train':
 
+        if args.path_model is None:
+            paths_out = path_out+'_model_vectorize.pickle'
+            paths_out += ','+path_out+'_model_cluster.pickle'
+        else:
+            paths_out = args.path_model            
 
-    return
+        train(
+            path_in, 
+            paths_out,
+            args.n_dim,
+            n_samples_cluster=args.n_samples_cluster,
+            vectorize_method=args.vectorize_method,
+            )
+
+        return
+
+    raise Exception('task {} not recognized. Run main.py --help for details.'.format(args.task))
 
 
 """
@@ -79,10 +93,10 @@ Main functions
 
 """
 
-def clean(input_path, output_path):
+def clean(path_in, path_out):
 
     # create cleaner object and read the data
-    cleaner = cleaning.Cleaning(path=input_path, sep=args.sep)
+    cleaner = cleaning.Cleaning(path=path_in, sep=args.sep)
 
     # split the NOTAM into items (Q, A, B, C, etc.) 
     cleaner.split()
@@ -91,23 +105,50 @@ def clean(input_path, output_path):
     cleaner.clean()
 
     # write result
-    cleaner.write(output_path)
+    cleaner.write(path_out)
 
     return
 
-def train(input_path, output_path, n_samples=None):
+def train(path_in, paths_out, n_dim, vectorize_method='TFIDF-SVD', n_samples_cluster=None):
+
+    try:
+        path_out_vectorize,path_out_cluster = paths_out.split(',')
+    except:
+        raise Exception('train(): please provide 2 output paths separated by a coma (path_out_vectorize,path_out_cluster).')
+    
+    sys.stdout.write('Task: train.\nOutput model paths:\nvectorize:{0}\ncluster:{1}\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
 
     # create model training object
-    model_train = modelling.ModelTraining(input_path)
+    model_train = modelling.ModelTraining(path_in)
 
     # vectorize the NOTAMs and do
     # dimensionality reduction
-    model_train.vectorize()
+    model_train.vectorize(
+        path_out=path_out_vectorize, 
+        method=vectorize_method, 
+        n_dim=n_dim,
+        )
 
     # train and persist model
-    model_train.cluster_train(output_path.replace('.pickle', '_cluster.pickle'), n_samples=n_samples)
+    if args.cluster_method == 'hierarch_cosine_average':
+        method = 'hierarchical'
+        method_options_dict = {'method': 'average', 'metric': 'cosine'}
+
+    if args.cluster_method == 'hierarch_euclid_ward':
+        method = 'hierarchical'
+        method_options_dict = {'method': 'ward'}
+
+    model_train.cluster_train(
+        path_out=path_out_cluster, 
+        method=method,
+        method_options_dict=method_options_dict,
+        n_samples=n_samples_cluster,
+        )
 
     return
+
+# def test(path_in, path_out):
+
 
 
 """
@@ -135,24 +176,39 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        'tasks',
-        default='clean,predict',
-        help='Coma-separated tasks to perform among \'clean\',\'train\',\'test\' and \'predict\'. Default: clean,predict',
+        'task',
+        help='Task to perform among \'clean\',\'train\',\'test\' and \'predict\'',
     )
 
     parser.add_argument(
-        'input',  default=None,
-        help='input file path (csv file with NOTAMs)')
+        'path_in', default=None,
+        help='Input file path (csv file with NOTAMs)')
 
     parser.add_argument(
         '-o', '--output', default=None,
-        help='basename of the output file path. It will write a csv file with cleaned NOTAMs, features and classification (group and importance) at each stage of the process. Default: input file path with the task name appended to the name.')
+        help='Output file path. It will write a file with cleaned NOTAMs, \
+cluster label and classification (group and importance) depending on the task. \
+Default: input file path with task result appended to the name.')
+
+    parser.add_argument(
+        '-path_model', default=None,
+        help='Output model file path (output for train and \
+input for test and predict). Please provide 2 file names separated \
+by a coma, first providing a path for the vectorizing model, \
+then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
+
 
     parser.add_argument('-seed', default=None, type=int, help='random seed')
 
     parser.add_argument('-sep', default=',', help='Separator for the input file')
 
-    parser.add_argument('-n_samples', default=None, type=int, help='Number of samples for the training')
+    parser.add_argument('-n_samples_cluster', default=None, type=int, help='Number of samples for the training')
+
+    parser.add_argument('-vectorize_method', default='TFIDF-SVD', help='Method to vectorize the NOTAMs. Default: TFIDF-SVD')
+    parser.add_argument('-n_dim', type=int, default=50, help='Dimension of the vector. Default: 50')
+
+    parser.add_argument('-cluster_method', default='hierarch_cosine_average', help='Metric to cluster the NOTAMs. Default: hierarch_cosine_average')
+
 
     args = parser.parse_args()
 

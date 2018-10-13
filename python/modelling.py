@@ -73,26 +73,26 @@ class ModelTraining(object):
         self.N = len(self.__df)
         sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
 
-
     def vectorize(
-            self, method='BOW', path_vocabulary=PATH_VOCABULARY, 
+            self, path_out=PATH_VECTORIZE_MODEL, 
+            method='TFIDF-SVD', path_vocabulary=PATH_VOCABULARY, 
             random_state=None, n_dim=None):
         """Vectorize the NOTAMs and get the dictionary """
 
         if n_dim is None:
             n_dim = self.__n_dim
         self.__vector = vectorize(
-            self.__df, path_vocabulary=path_vocabulary, 
+            self.__df, path_out=path_out, path_vocabulary=path_vocabulary, 
             n_dim=n_dim, method=method, random_state=None)
 
         self.__vocabulary_dict = read_vocabulary(path_vocabulary)
 
         return
 
-
     def cluster_train(
             self, path_out=PATH_CLUSTER_MODEL,
-            method='hierarchical', n_clusters=50, 
+            method='hierarchical',
+            method_options_dict = {'method': 'ward'},
             random_state=RANDOM_STATE, n_samples=None):
         """ Train clusters with hierarchical clustering 
         and persist model as the vector plus labels
@@ -100,8 +100,9 @@ class ModelTraining(object):
         predicting"""
 
         # run clustering
-        sys.stdout.write('Training (clusters)...'); sys.stdout.flush()
-        method_options_dict = {'n_clusters': n_clusters}
+        sys.stdout.write('Training clusters (method:{0}, options:{1})...'.format(
+            method, method_options_dict)); sys.stdout.flush()
+        
         model = find_clusters_train(
             self.__vector, method=method,
             method_options_dict=method_options_dict,
@@ -172,7 +173,7 @@ class ModelPredict(object):
         sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
 
     def vectorize(
-            self, method='BOW', path_vocabulary=PATH_VOCABULARY,
+            self, path_out=PATH_VECTORIZE_MODEL, method='TFIDF-SVD', path_vocabulary=PATH_VOCABULARY,
             do_build_vocabulary=False, 
             random_state=None, n_dim=None):
         """Vectorize the NOTAMs"""
@@ -180,7 +181,7 @@ class ModelPredict(object):
         if n_dim is None:
             n_dim = self.__n_dim
         self.__vector = vectorize(
-            self.__df, path_vocabulary=path_vocabulary, 
+            self.__df, path_out=path_out, path_vocabulary=path_vocabulary, 
             n_dim=n_dim, method=method, random_state=None)
 
         return
@@ -278,7 +279,7 @@ def find_clusters_train(
         d = np.quantile(Z[:,2], 0.995)
         labels = fcluster(Z, d, criterion='distance')
 
-        # persist model and linkage matrix
+        # persist vector, labels and linkage matrix
         if path_out is not None:
             with open(path_out, 'wb') as file_out:
                 pickle.dump((X, labels, Z), file_out)
@@ -619,16 +620,15 @@ def read_vocabulary(path=PATH_VOCABULARY, method='scikit-learn'):
 
     raise Exception('read_vocabulary(): method {} not recognized'.format(method))
 
-
 def vectorize(
-        df, path_vocabulary=PATH_VOCABULARY, do_train=True,
-        path_out = PATH_VECTORIZE_MODEL, 
+        df, path_out = PATH_VECTORIZE_MODEL,
+        path_vocabulary=PATH_VOCABULARY, do_train=True,
         method='BOW-SVD', text_col_name='text_clean', n_dim=50, 
         random_state=None):
     """Vectorize the NOTAM and reduce the
     dimensionality. First load a dictionary
     then count the words and run dimensionality
-    reduction.  
+    reduction.
 
     Methods:
     - TFIDF-SVD
@@ -639,7 +639,7 @@ def vectorize(
 
     See http://scikit-learn.org/stable/auto_examples/applications/plot_topics_extraction_with_nmf_lda.html#sphx-glr-auto-examples-applications-plot-topics-extraction-with-nmf-lda-py
     and http://www.visiondummy.com/2014/04/curse-dimensionality-affect-classification/
-    
+
     """
 
     # get the NOTAMS as a corpus
@@ -648,7 +648,7 @@ def vectorize(
     # not 0
     corpus = df[text_col_name].fillna('empty_NOTAM').values
 
-    sys.stdout.write('Vectorizing NOTAMs...')
+    sys.stdout.write('Vectorizing NOTAMs (method:{0}, n_dim:{1})...'.format(method, n_dim)); sys.stdout.flush()
 
     if method in ['TFIDF-SVD', 'TFIDF-NMF', 'BOW-SVD', 'BOW-LDA']:
 
@@ -701,7 +701,7 @@ def vectorize(
         
         vector = decomposer.transform(word_counts)
 
-        sys.stdout.write('done.\n')
+        sys.stdout.write('done.\n'); sys.stdout.flush()
         return vector
 
     if method in ['word2vec']:

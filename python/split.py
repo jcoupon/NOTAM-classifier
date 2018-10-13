@@ -38,7 +38,7 @@ def main(args):
     """
 
     # read input file
-    df = pd.read_csv(args.input, sep=';').set_index('item_id')
+    df = pd.read_csv(args.input, sep=args.sep).set_index('item_id')
 
     # split into training and test sample
     df_train, df_test = train_test_split(
@@ -75,6 +75,8 @@ if __name__ == "__main__":
     parser.add_argument(
         'output',  default=None,
         help='Coma-separated output file paths for the training and test samples')
+
+    parser.add_argument('-sep', default=',', help='Separator for the input file')
 
     parser.add_argument('-seed', default=20091982, type=int, help='random seed')
 
