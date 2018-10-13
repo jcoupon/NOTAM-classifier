@@ -635,9 +635,10 @@ def vectorize(
     - TFIDF-NMF
     - BOW-SVD
     - BOW-LDA
-
+    - word2vec
 
     See http://scikit-learn.org/stable/auto_examples/applications/plot_topics_extraction_with_nmf_lda.html#sphx-glr-auto-examples-applications-plot-topics-extraction-with-nmf-lda-py
+    and http://www.visiondummy.com/2014/04/curse-dimensionality-affect-classification/
     
     """
 
@@ -763,19 +764,16 @@ def vectorize(
                 sys.stdout.write('done.\n')
                 return vectors
 
-    
-
 
         sys.stdout.write('done.\n')
         return None
-
-
 
     raise Exception('vectorize(): method {} not recognized'.format(method))
 
 
 def combine_word_vectors(model, texts):
-    """Average word vector for texts"""
+    """Combine word vectors over a NOTAM
+    using the average."""
 
     vectors = np.zeros((len(texts), model.vector_size))
     vector = np.zeros(model.vector_size)
