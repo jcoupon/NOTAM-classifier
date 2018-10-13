@@ -11,6 +11,7 @@ import os
 import sys
 import re
 import pandas as pd
+import pickle
 
 # add ./python to python path
 #sys.path.insert(0, '../python')
@@ -75,7 +76,6 @@ def main(args):
             path_in,
             path_model,
             args.n_dim,
-            n_samples_cluster=args.n_samples_cluster,
             vectorize_method=args.vectorize_method,
             )
 
@@ -91,8 +91,9 @@ def main(args):
 
         predict(
             path_in,
-            path_out,
+            path_out+'_predict.csv' if args.path_out is None else args.path_out,
             path_model,
+            args.cluster_dist,
             )
 
         return
@@ -130,7 +131,7 @@ def clean(path_in, path_out):
 
     return
 
-def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD', n_samples_cluster=None):
+def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD'):
     """Read clean NOTAM csv file, train vectorize and 
     clustering (unsupervised) models and write model files.
     """
@@ -141,9 +142,11 @@ def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD', n_samples_cl
     except:
         raise Exception('train(): please provide 2 output paths separated by a coma (path_out_vectorize,path_out_cluster).')
     
-    sys.stdout.write('Task: train.\n\nOutput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
+    sys.stdout.write(
+        'Task: train.\n\nOutput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(
+            path_out_vectorize, path_out_cluster)); sys.stdout.flush()
 
-    # create model training object
+    # create training object
     model_train = modelling.ModelTraining(path_in)
 
     # vectorize the NOTAMs and do
@@ -167,7 +170,6 @@ def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD', n_samples_cl
         path_out=path_out_cluster, 
         method=method,
         method_options_dict=method_options_dict,
-        n_samples=n_samples_cluster,
         )
 
     return
@@ -179,16 +181,59 @@ def predict(path_in, path_out, path_model, cluster_dist):
 
     # get the paths out for the models
     try:
-        path_out_vectorize,path_out_cluster = path_model.split(',')
+        path_in_vectorize,path_in_cluster = path_model.split(',')
     except:
         raise Exception('predict(): please provide 2 output paths separated by a coma (path_out_vectorize,path_out_cluster).')
 
+    sys.stdout.write(
+        'Task: predict.\n\nInput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(
+            path_in_vectorize, path_in_cluster)); sys.stdout.flush()
 
-    sys.stdout.write('Task: predict.\n\nInput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
+    # create predict object
+    model_predict = modelling.ModelPredict(path_in)
 
+    # vectorize the NOTAMs and do
+    # dimensionality reduction
+    model_predict.vectorize(
+        path_in=path_in_vectorize,
+        )
 
+    if cluster_dist == 'test':
+        # loop over different values of 
+        # cluster distances and record the 
+        # number of clusters with a purity
+        # higher than 80%.
+        # write purity values and exit
 
+        n_clusters, dist, f_pure = model_predict.cluster_test(
+            path_in = path_in_cluster,
+        )
 
+        pd.DataFrame.from_dict({
+            'n_clusters': n_clusters, 
+            'dist': dist,
+            'f_pure': f_pure}).to_csv(path_out, index=False)
+
+        return
+
+    if cluster_dist == 'guess':
+        # find the value that gives a 
+        # reasonable number of clusters 
+        with open(path_in_cluster, 'rb') as file_in:
+            _, _, Z = pickle.load(file_in)
+
+        cluster_dist = np.quantile(Z[:,2], 0.995)
+    else:
+
+        cluster_dist = float(cluster_dist)
+
+    model_predict.cluster_predict(
+        path_in = path_in_cluster,
+        dist = cluster_dist,
+    )
+
+    # write result
+    model_predict.write(path_out)
 
     return
 
@@ -228,14 +273,14 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '-path_out', default=None,
-        help='Output file path. It will write a file with cleaned NOTAMs, \
-cluster label and classification (group and importance) depending on the task. \
-Default: input file path with task result appended to the name.')
+        help='Output file path. Write a file with cleaned NOTAMs for \'clean\', \
+or \'predict\' output (group and importance) depending on the task. \
+Default: path based on input file path with task name appended to the name.')
 
     parser.add_argument(
         '-path_model', default=None,
-        help='Output model file path (output for train and \
-input for test and predict). Please provide 2 file names separated \
+        help='Output model file path (output for \'train\' and \
+input for \'predict\'). Please provide 2 file names separated \
 by a coma, first providing a path for the vectorizing model, \
 then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
 
@@ -245,10 +290,6 @@ then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
 
     parser.add_argument(
         '-sep', default=',', help='Separator for the input file.')
-
-    parser.add_argument(
-        '-n_samples_cluster', default=None, type=int, 
-        help='Number of samples for the training.')
 
     parser.add_argument(
         '-vectorize_method', default='TFIDF-SVD', 
@@ -264,11 +305,11 @@ then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
 
     parser.add_argument(
         '-cluster_dist', default='guess', 
-        help='Used in \'predict\' only: distance to select the cluster when \
+        help='Used in \'predict\' only: distance to select the clusters when \
 trained with hierarchical clustering. Takes a float value, or \'guess\' \
 (based in the quantiles of the linkage matrix to give roughly 50 clusters)\
-, or \'all\' (used only for testing purpose: will compute the cluster purity \
-for a number of clusters).  ')
+, or \'test\' (used only for testing purpose: will compute the cluster purity \
+for a number of clusters and output result in path_out).')
 
     args = parser.parse_args()
 

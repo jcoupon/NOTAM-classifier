@@ -70,8 +70,11 @@ class Cleaning(object):
 
         # add the "important" column
         # which is the inverse of the
-        # "supress" column
-        self.__df['important'] = self.__df['supress'] == 0
+        # "supress" column, if present
+        try:
+            self.__df['important'] = self.__df['supress'] == 0
+        except:
+            pass
 
         # structured part
         # TODO

@@ -82,7 +82,7 @@ class ModelTraining(object):
         if n_dim is None:
             n_dim = self.__n_dim
         self.__vector = vectorize(
-            self.__df, path_out=path_out, path_vocabulary=path_vocabulary, 
+            self.__df, path=path_out, path_vocabulary=path_vocabulary, 
             n_dim=n_dim, method=method, random_state=None)
 
         self.__vocabulary_dict = read_vocabulary(path_vocabulary)
@@ -110,16 +110,16 @@ class ModelTraining(object):
             random_state=random_state)
         sys.stdout.write('done.\n'); sys.stdout.flush()
 
-    def cluster_predict(
-            self, path_in=PATH_CLUSTER_MODEL, 
-            method='hierarchical'):
-        # run clustering
-        sys.stdout.write('Predicting (clusters)...'); sys.stdout.flush()
-        self.__labels = find_clusters_predict(
-            self.__vector, path_in, method=method,
-            n_samples=None)
-        self.__df['cluster_labels'] = self.__labels
-        sys.stdout.write('done.\n'); sys.stdout.flush()
+#    def cluster_predict(
+#            self, path_in=PATH_CLUSTER_MODEL, 
+#            method='hierarchical'):
+#        # run clustering
+#        sys.stdout.write('Predicting (clusters)...'); sys.stdout.flush()
+#        self.__labels = find_clusters_predict(
+#            self.__vector, path_in, method=method,
+#            n_samples=None)
+#        self.__df['cluster_labels'] = self.__labels
+#        sys.stdout.write('done.\n'); sys.stdout.flush()
 
     def get_vector(self):
         return self.__vector
@@ -173,29 +173,69 @@ class ModelPredict(object):
         sys.stdout.write('done (found {} NOTAMs).\n'.format(self.N))
 
     def vectorize(
-            self, path_out=PATH_VECTORIZE_MODEL, method='TFIDF-SVD', path_vocabulary=PATH_VOCABULARY,
+            self, path_in=PATH_VECTORIZE_MODEL, 
+            path_vocabulary=PATH_VOCABULARY,
             do_build_vocabulary=False, 
-            random_state=None, n_dim=None):
+            random_state=None):
         """Vectorize the NOTAMs"""
 
-        if n_dim is None:
-            n_dim = self.__n_dim
         self.__vector = vectorize(
-            self.__df, path_out=path_out, path_vocabulary=path_vocabulary, 
-            n_dim=n_dim, method=method, random_state=None)
+            self.__df, path=path_in, 
+            path_vocabulary=path_vocabulary, 
+            do_train=False,
+        )
 
         return
 
     def cluster_predict(
             self, path_in=PATH_CLUSTER_MODEL, 
-            method='hierarchical'):
+            method='hierarchical', dist=None):
+
         # run clustering
-        sys.stdout.write('Predicting (clusters)...'); sys.stdout.flush()
+        sys.stdout.write('Predicting clusters...'); sys.stdout.flush()
         self.__cluster_labels = find_clusters_predict(
             self.__vector, path_in, method=method,
-            n_samples=None)
+            n_samples=None, dist=dist)
         self.__df['cluster_labels'] = self.__cluster_labels
         sys.stdout.write('done.\n'); sys.stdout.flush()
+
+    def cluster_test(
+        self, path_in=PATH_CLUSTER_MODEL, class_name='important'):
+
+        sys.stdout.write('Testing clusters...\n'); sys.stdout.flush()
+
+        with open(path_in, 'rb') as file_in:
+            _, _, Z = pickle.load(file_in)
+
+        n_clusters_list = []
+        f_pure_list = []
+        dist_list = []
+
+        # choose min distance so that it covers 
+        # a wide range of the number of clusters 
+        log_d_min = np.log10(np.quantile(Z[:,2], 0.95))
+        log_d_max = np.log10(max(Z[:,2]))
+
+        for dist in np.logspace(log_d_min, log_d_max, 30):
+
+            n_clusters = sum(Z[:,2] > dist)
+            
+            labels = find_clusters_predict(
+                self.__vector, path_in, dist=dist)
+
+            N, purity, f_pure = get_cluster_purity(labels, self.__df[class_name])        
+            
+            f_pure_list.append(f_pure)
+            n_clusters_list.append(n_clusters)
+            dist_list.append(dist)
+
+            sys.stdout.write('n_clusters={0}, dist={1:.2f}, f_pure={2:.2f}\n'.format(
+                n_clusters, dist, f_pure)); sys.stdout.flush()
+
+        sys.stdout.write('done.\n'); sys.stdout.flush()
+
+        return n_clusters_list, dist_list, f_pure_list
+
 
     def visualize(
             self, method='t-SNE', random_state=None, 
@@ -280,10 +320,9 @@ def find_clusters_train(
         # persist vector, labels and linkage matrix
         if path_out is not None:
             with open(path_out, 'wb') as file_out:
-                pickle.dump((X, labels, Z), file_out)
+                pickle.dump((X[choice], labels, Z), file_out)
         
         return labels, Z
-
 
     if method == 'kmeans':
         if method_options_dict is None:
@@ -324,8 +363,8 @@ def find_clusters_train(
 
 def find_clusters_predict(
         X, path_in, n_samples=None,
-        method='hierarchical', dist=None, 
-        method_options_dict=None):
+        method='hierarchical', dist=None,
+        method_options_dict=None, ):
     """Find clusters using scikit learn
     clustering or nearest neighbour algorithms.
 
@@ -619,7 +658,7 @@ def read_vocabulary(path=PATH_VOCABULARY, method='scikit-learn'):
     raise Exception('read_vocabulary(): method {} not recognized'.format(method))
 
 def vectorize(
-        df, path_out = PATH_VECTORIZE_MODEL,
+        df, path = PATH_VECTORIZE_MODEL,
         path_vocabulary=PATH_VOCABULARY, do_train=True,
         method='BOW-SVD', text_col_name='text_clean', n_dim=50, 
         random_state=None):
@@ -646,11 +685,13 @@ def vectorize(
     # not 0
     corpus = df[text_col_name].fillna('empty_NOTAM').values
 
-    sys.stdout.write('Vectorizing NOTAMs (method:{0}, n_dim:{1})...'.format(method, n_dim)); sys.stdout.flush()
 
     if method in ['TFIDF-SVD', 'TFIDF-NMF', 'BOW-SVD', 'BOW-LDA']:
 
         if do_train:
+
+            sys.stdout.write('Vectorizing NOTAMs (method:{0}, n_dim:{1})...'.format(method, n_dim)); sys.stdout.flush()
+
             # build the vocabulary
             vocabulary_dict = build_vocabulary(
                 corpus, path=path_vocabulary, method='scikit-learn')
@@ -676,11 +717,11 @@ def vectorize(
             if method.split('-')[1] == 'NMF':
                 decomposer = NMF(n_components=n_dim, random_state=random_state)
     
-            decomposer.fit(word_counts)
+            vector = decomposer.fit_transform(word_counts)
 
             # persist models
-            if path_out is not None:
-                with open(path_out, 'wb') as file_out:
+            if path is not None:
+                with open(path, 'wb') as file_out:
                     pickle.dump((vectorizer, decomposer), file_out)
 
         else:
@@ -688,16 +729,17 @@ def vectorize(
             #vocabulary_dict = read_vocabulary(
             #    path_vocabulary, method='scikit-learn')
 
-            if path_out is not None:
-                with open(path_out, 'rb') as file_in:
+            if path is not None:
+                with open(path, 'rb') as file_in:
                     vectorizer, decomposer = pickle.load(file_in)            
             else:
                 raise Exception(
                     'vectorize(): a model file must be provided when predicting (do_train = False).')
         
+            sys.stdout.write('Vectorizing NOTAMs...'); sys.stdout.flush()
+
             word_counts = vectorizer.transform(corpus)
-        
-        vector = decomposer.transform(word_counts)
+            vector = decomposer.transform(word_counts)
 
         sys.stdout.write('done.\n'); sys.stdout.flush()
         return vector
@@ -707,6 +749,9 @@ def vectorize(
         # see https://medium.com/ml2vec/topic-modeling-is-an-unsupervised-learning-approach-to-clustering-documents-to-discover-topics-fdfbf30e27df
         # and https://medium.com/@sherryqixuan/topic-modeling-and-pyldavis-visualization-86a543e21f58
         if do_train:
+
+            sys.stdout.write('Vectorizing NOTAMs (method:{0}, n_dim:{1})...'.format(method, n_dim)); sys.stdout.flush()
+
             # build the vocabulary
             vocabulary_dict = build_vocabulary(
                 corpus, path=path_vocabulary, method='gensim')
@@ -720,7 +765,7 @@ def vectorize(
         
                 # persist model
                 if path_out is not None:
-                    with open(path_out, 'wb') as file_out:
+                    with open(path, 'wb') as file_out:
                         pickle.dump(model, file_out)
 
                 sys.stdout.write('done.\n')
@@ -747,7 +792,7 @@ def vectorize(
                 path_vocabulary, method='gensim')
 
             if path_out is not None:
-                with open(path_out, 'rb') as file_in:
+                with open(path, 'rb') as file_in:
                     model = pickle.load(file_in)            
             else:
                 raise Exception(
