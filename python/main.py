@@ -46,7 +46,7 @@ def main(args):
     path_in = args.path_in
 
     # output file path
-    if args.output is None:
+    if args.path_out is None:
         # keep the path basename (without the extension)
         try:
             path_out, file_extension = os.path.splitext(path_in) #''.join(path_in.split('.')[:-1])
@@ -58,7 +58,7 @@ def main(args):
     if args.task == 'clean':
         clean(
             path_in, 
-            path_out+'_clean.csv' if args.output is None else args.output,
+            path_out+'_clean.csv' if args.path_out is None else args.path_out,
             )
 
         return
@@ -66,14 +66,14 @@ def main(args):
     if args.task == 'train':
 
         if args.path_model is None:
-            paths_out = path_out+'_model_vectorize.pickle'
-            paths_out += ','+path_out+'_model_cluster.pickle'
+            path_model = path_out+'_model_vectorize.pickle'
+            path_model += ','+path_out+'_model_cluster.pickle'
         else:
-            paths_out = args.path_model            
+            path_model = args.path_model            
 
         train(
-            path_in, 
-            paths_out,
+            path_in,
+            path_model,
             args.n_dim,
             n_samples_cluster=args.n_samples_cluster,
             vectorize_method=args.vectorize_method,
@@ -94,7 +94,10 @@ Main functions
 """
 
 def clean(path_in, path_out):
-
+    """Read NOTAM csv file, perform cleaning
+    and write into new csv file.
+    """
+    
     # create cleaner object and read the data
     cleaner = cleaning.Cleaning(path=path_in, sep=args.sep)
 
@@ -109,14 +112,18 @@ def clean(path_in, path_out):
 
     return
 
-def train(path_in, paths_out, n_dim, vectorize_method='TFIDF-SVD', n_samples_cluster=None):
+def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD', n_samples_cluster=None):
+    """Read clean NOTAM csv file, train vectorize and 
+    clustering (unsupervised) models and write model files.
+    """
 
+    # define the paths out for the models
     try:
-        path_out_vectorize,path_out_cluster = paths_out.split(',')
+        path_out_vectorize,path_out_cluster = path_model.split(',')
     except:
         raise Exception('train(): please provide 2 output paths separated by a coma (path_out_vectorize,path_out_cluster).')
     
-    sys.stdout.write('Task: train.\nOutput model paths:\nvectorize:{0}\ncluster:{1}\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
+    sys.stdout.write('Task: train.\n\nOutput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
 
     # create model training object
     model_train = modelling.ModelTraining(path_in)
@@ -147,8 +154,14 @@ def train(path_in, paths_out, n_dim, vectorize_method='TFIDF-SVD', n_samples_clu
 
     return
 
-# def test(path_in, path_out):
+def predict(path_in, path_out):
+    """Read clean NOTAM csv file, read model files and 
+    clustering (unsupervised) models and write model files.
+    """
 
+
+
+    return
 
 
 """
@@ -185,7 +198,7 @@ if __name__ == "__main__":
         help='Input file path (csv file with NOTAMs)')
 
     parser.add_argument(
-        '-o', '--output', default=None,
+        '-path_out', default=None,
         help='Output file path. It will write a file with cleaned NOTAMs, \
 cluster label and classification (group and importance) depending on the task. \
 Default: input file path with task result appended to the name.')
@@ -205,6 +218,7 @@ then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
     parser.add_argument('-n_samples_cluster', default=None, type=int, help='Number of samples for the training')
 
     parser.add_argument('-vectorize_method', default='TFIDF-SVD', help='Method to vectorize the NOTAMs. Default: TFIDF-SVD')
+
     parser.add_argument('-n_dim', type=int, default=50, help='Dimension of the vector. Default: 50')
 
     parser.add_argument('-cluster_method', default='hierarch_cosine_average', help='Metric to cluster the NOTAMs. Default: hierarch_cosine_average')
