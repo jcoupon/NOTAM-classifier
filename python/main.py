@@ -49,7 +49,7 @@ def main(args):
     if args.path_out is None:
         # keep the path basename (without the extension)
         try:
-            path_out, file_extension = os.path.splitext(path_in) #''.join(path_in.split('.')[:-1])
+            path_out, file_extension = os.path.splitext(path_in)
         except:
             # if the input file has no extension
             # keep it as is
@@ -81,6 +81,22 @@ def main(args):
 
         return
 
+    if args.task == 'predict':
+
+        if args.path_model is None:
+            path_model = path_out+'_model_vectorize.pickle'
+            path_model += ','+path_out+'_model_cluster.pickle'
+        else:
+            path_model = args.path_model            
+
+        predict(
+            path_in,
+            path_out,
+            path_model,
+            )
+
+        return
+
     raise Exception('task {} not recognized. Run main.py --help for details.'.format(args.task))
 
 
@@ -98,6 +114,8 @@ def clean(path_in, path_out):
     and write into new csv file.
     """
     
+    sys.stdout.write('Task: clean.\n\nOutput file path:{0}\n\n'.format(path_out)); sys.stdout.flush()
+
     # create cleaner object and read the data
     cleaner = cleaning.Cleaning(path=path_in, sep=args.sep)
 
@@ -154,10 +172,21 @@ def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD', n_samples_cl
 
     return
 
-def predict(path_in, path_out):
+def predict(path_in, path_out, path_model, cluster_dist):
     """Read clean NOTAM csv file, read model files and 
     clustering (unsupervised) models and write model files.
     """
+
+    # get the paths out for the models
+    try:
+        path_out_vectorize,path_out_cluster = path_model.split(',')
+    except:
+        raise Exception('predict(): please provide 2 output paths separated by a coma (path_out_vectorize,path_out_cluster).')
+
+
+    sys.stdout.write('Task: predict.\n\nInput model paths:\nvectorize:{0}\ncluster:{1}\n\n'.format(path_out_vectorize, path_out_cluster)); sys.stdout.flush()
+
+
 
 
 
@@ -190,7 +219,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         'task',
-        help='Task to perform among \'clean\',\'train\',\'test\' and \'predict\'',
+        help='Task to perform among \'clean\',\'train\', and \'predict\'',
     )
 
     parser.add_argument(
@@ -211,18 +240,35 @@ by a coma, first providing a path for the vectorizing model, \
 then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
 
 
-    parser.add_argument('-seed', default=None, type=int, help='random seed')
+    parser.add_argument(
+        '-seed', default=None, type=int, help='Random seed.')
 
-    parser.add_argument('-sep', default=',', help='Separator for the input file')
+    parser.add_argument(
+        '-sep', default=',', help='Separator for the input file.')
 
-    parser.add_argument('-n_samples_cluster', default=None, type=int, help='Number of samples for the training')
+    parser.add_argument(
+        '-n_samples_cluster', default=None, type=int, 
+        help='Number of samples for the training.')
 
-    parser.add_argument('-vectorize_method', default='TFIDF-SVD', help='Method to vectorize the NOTAMs. Default: TFIDF-SVD')
+    parser.add_argument(
+        '-vectorize_method', default='TFIDF-SVD', 
+        help='Method to vectorize the NOTAMs. Default: TFIDF-SVD.')
 
-    parser.add_argument('-n_dim', type=int, default=50, help='Dimension of the vector. Default: 50')
+    parser.add_argument(
+        '-n_dim', type=int, default=50, 
+        help='Dimension of the vector. Default: 50')
 
-    parser.add_argument('-cluster_method', default='hierarch_cosine_average', help='Metric to cluster the NOTAMs. Default: hierarch_cosine_average')
+    parser.add_argument(
+        '-cluster_method', default='hierarch_cosine_average', 
+        help='Metric to cluster the NOTAMs. Default: hierarch_cosine_average.')
 
+    parser.add_argument(
+        '-cluster_dist', default='guess', 
+        help='Used in \'predict\' only: distance to select the cluster when \
+trained with hierarchical clustering. Takes a float value, or \'guess\' \
+(based in the quantiles of the linkage matrix to give roughly 50 clusters)\
+, or \'all\' (used only for testing purpose: will compute the cluster purity \
+for a number of clusters).  ')
 
     args = parser.parse_args()
 

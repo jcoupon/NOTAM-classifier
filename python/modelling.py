@@ -273,8 +273,6 @@ def find_clusters_train(
     if method == 'hierarchical':
 
         Z = linkage(X[choice], **method_options_dict)
-        # Z = linkage(X[choice], method='average', metric='cosine')
-        # Z = linkage(X[choice], method='ward')
 
         d = np.quantile(Z[:,2], 0.995)
         labels = fcluster(Z, d, criterion='distance')
