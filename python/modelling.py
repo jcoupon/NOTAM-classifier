@@ -722,6 +722,11 @@ def vectorize(
                 decomposer = NMF(n_components=n_dim, random_state=random_state)
     
             vector = decomposer.fit_transform(word_counts)
+            # For NMF, replace zero vectors by a large number
+            # so that the cosine distance is defined
+            if method.split('-')[1] == 'NMF':
+                zero_vector = np.sum(vector, axis=1) == 0
+                vector[zero_vector, :] = np.zeros(vector.shape[1])+99.0
 
             # persist models
             if path is not None:
@@ -744,6 +749,13 @@ def vectorize(
 
             word_counts = vectorizer.transform(corpus)
             vector = decomposer.transform(word_counts)
+
+            vector = decomposer.fit_transform(word_counts)
+            # For NMF, replace zero vectors by a large number
+            # so that the cosine distance is defined
+            if method.split('-')[1] == 'NMF':
+                zero_vector = np.sum(vector, axis=1) == 0
+                vector[zero_vector, :] = np.zeros(vector.shape[1])+99.0
 
         sys.stdout.write('done.\n'); sys.stdout.flush()
         return vector
@@ -807,7 +819,6 @@ def vectorize(
 
             if method == 'word2vec':
                 vectors = combine_word_vectors(model, texts)
-
                 sys.stdout.write('done.\n')
                 return vectors
 
