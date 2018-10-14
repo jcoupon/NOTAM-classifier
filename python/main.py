@@ -77,6 +77,7 @@ def main(args):
             path_model,
             args.n_dim,
             vectorize_method=args.vectorize_method,
+            cluster_method=args.cluster_method,
             )
 
         return
@@ -94,6 +95,8 @@ def main(args):
             path_out+'_predict.csv' if args.path_out is None else args.path_out,
             path_model,
             args.cluster_dist,
+            vectorize_method=args.vectorize_method,
+            cluster_method=args.cluster_method,
             )
 
         return
@@ -131,7 +134,9 @@ def clean(path_in, path_out):
 
     return
 
-def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD'):
+def train(
+        path_in, path_model, n_dim, 
+        vectorize_method='TFIDF-SVD', cluster_method='hierarch_cosine_average'):
     """Read clean NOTAM csv file, train vectorize and 
     clustering (unsupervised) models and write model files.
     """
@@ -158,11 +163,11 @@ def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD'):
         )
 
     # train and persist model
-    if args.cluster_method == 'hierarch_cosine_average':
+    if cluster_method == 'hierarch_cosine_average':
         method = 'hierarchical'
         method_options_dict = {'method': 'average', 'metric': 'cosine'}
 
-    if args.cluster_method == 'hierarch_euclid_ward':
+    if cluster_method == 'hierarch_euclid_ward':
         method = 'hierarchical'
         method_options_dict = {'method': 'ward'}
 
@@ -174,7 +179,9 @@ def train(path_in, path_model, n_dim, vectorize_method='TFIDF-SVD'):
 
     return
 
-def predict(path_in, path_out, path_model, cluster_dist):
+def predict(
+        path_in, path_out, path_model, cluster_dist, 
+        vectorize_method='TFIDF-SVD', cluster_method='hierarch_cosine_average'):
     """Read clean NOTAM csv file, read model files and 
     clustering (unsupervised) models and write model files.
     """
@@ -196,6 +203,7 @@ def predict(path_in, path_out, path_model, cluster_dist):
     # dimensionality reduction
     model_predict.vectorize(
         path_in=path_in_vectorize,
+        method=vectorize_method,
         )
 
     if cluster_dist == 'test':

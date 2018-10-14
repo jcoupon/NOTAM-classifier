@@ -75,7 +75,8 @@ class ModelTraining(object):
 
     def vectorize(
             self, path_out=PATH_VECTORIZE_MODEL, 
-            method='TFIDF-SVD', path_vocabulary=PATH_VOCABULARY, 
+            method='TFIDF-SVD', 
+            path_vocabulary=PATH_VOCABULARY, 
             random_state=None, n_dim=None):
         """Vectorize the NOTAMs and get the dictionary """
 
@@ -85,7 +86,8 @@ class ModelTraining(object):
             self.__df, path=path_out, path_vocabulary=path_vocabulary, 
             n_dim=n_dim, method=method, random_state=None)
 
-        self.__vocabulary_dict = read_vocabulary(path_vocabulary)
+
+        #self.__vocabulary_dict = read_vocabulary(path_vocabulary)
 
         return
 
@@ -174,15 +176,17 @@ class ModelPredict(object):
 
     def vectorize(
             self, path_in=PATH_VECTORIZE_MODEL, 
+            method='TFIDF-SVD', 
             path_vocabulary=PATH_VOCABULARY,
             do_build_vocabulary=False, 
+            
             random_state=None):
         """Vectorize the NOTAMs"""
 
         self.__vector = vectorize(
             self.__df, path=path_in, 
             path_vocabulary=path_vocabulary, 
-            do_train=False,
+            do_train=False, method=method,
         )
 
         return
@@ -764,7 +768,7 @@ def vectorize(
                 vectors = combine_word_vectors(model, texts)
         
                 # persist model
-                if path_out is not None:
+                if path is not None:
                     with open(path, 'wb') as file_out:
                         pickle.dump(model, file_out)
 
@@ -791,7 +795,7 @@ def vectorize(
             vocabulary_dict = read_vocabulary(
                 path_vocabulary, method='gensim')
 
-            if path_out is not None:
+            if path is not None:
                 with open(path, 'rb') as file_in:
                     model = pickle.load(file_in)            
             else:
