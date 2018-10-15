@@ -23,7 +23,7 @@ from collections import defaultdict
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 # default vocabulary path
-PATH_VOCABULARY = None #DIR_PATH+'/vocabulary_dict.csv'
+PATH_VOCABULARY = '/tmp/vocabulary_dict.csv' #DIR_PATH+'/vocabulary_dict.csv'
 
 # output file for the cluster model
 PATH_VECTORIZE_MODEL = DIR_PATH+'/vectorize_model.pickle'
