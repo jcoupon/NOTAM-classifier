@@ -34,8 +34,12 @@ RANDOM_STATE = None
 # output file for the cluster model
 PATH_CLUSTER_MODEL = DIR_PATH+'/cluster_model'
 
+# default method for vectoizing
+VECTORIZE_METHOD = 'TFIDF-SVD'
+
 # default number of dimension for the word vector
 N_DIM = 50
+
 
 """
 
@@ -75,7 +79,7 @@ class ModelTraining(object):
 
     def vectorize(
             self, path_out=PATH_VECTORIZE_MODEL, 
-            method='TFIDF-SVD', 
+            method=VECTORIZE_METHOD, 
             path_vocabulary=PATH_VOCABULARY, 
             random_state=None, n_dim=None):
         """Vectorize the NOTAMs and get the dictionary """
@@ -176,7 +180,7 @@ class ModelPredict(object):
 
     def vectorize(
             self, path_in=PATH_VECTORIZE_MODEL, 
-            method='TFIDF-SVD', 
+            method=VECTORIZE_METHOD, 
             path_vocabulary=PATH_VOCABULARY,
             do_build_vocabulary=False, 
             
@@ -279,7 +283,6 @@ class ModelPredict(object):
 
 
             return
-
 
         raise Exception('visualize(): method {} not recognized'.format(method))
 
@@ -563,7 +566,6 @@ Falling back to non-interactive plot (will write plot in graph.pdf).\n')
 
     return
 
-
 def build_vocabulary(
         corpus, path=PATH_VOCABULARY, method='scikit-learn', min_freq=0):
     """Build a vocabulary to be used for the 
@@ -664,7 +666,7 @@ def read_vocabulary(path=PATH_VOCABULARY, method='scikit-learn'):
 def vectorize(
         df, path = PATH_VECTORIZE_MODEL,
         path_vocabulary=PATH_VOCABULARY, do_train=True,
-        method='BOW-SVD', text_col_name='text_clean', n_dim=50, 
+        method=VECTORIZE_METHOD, text_col_name='text_clean', n_dim=50, 
         random_state=None):
     """Vectorize the NOTAM and reduce the
     dimensionality. First load a dictionary
@@ -830,7 +832,8 @@ def vectorize(
 
 
 def combine_word_vectors(model, texts):
-    """Combine word vectors over a NOTAM
+    """For word2vec method. 
+    Combine word vectors over a NOTAM
     using the average."""
 
     vectors = np.zeros((len(texts), model.vector_size))
