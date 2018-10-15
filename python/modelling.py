@@ -23,7 +23,7 @@ from collections import defaultdict
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 # default vocabulary path
-PATH_VOCABULARY = DIR_PATH+'/vocabulary_dict.csv'
+PATH_VOCABULARY = None #DIR_PATH+'/vocabulary_dict.csv'
 
 # output file for the cluster model
 PATH_VECTORIZE_MODEL = DIR_PATH+'/vectorize_model.pickle'
@@ -182,8 +182,7 @@ class ModelPredict(object):
             self, path_in=PATH_VECTORIZE_MODEL, 
             method=VECTORIZE_METHOD, 
             path_vocabulary=PATH_VOCABULARY,
-            do_build_vocabulary=False, 
-            
+            do_build_vocabulary=False,
             random_state=None):
         """Vectorize the NOTAMs"""
 
@@ -299,7 +298,6 @@ class ModelPredict(object):
         sys.stdout.write('Writting file...')
         self.__df.to_csv(path)
         sys.stdout.write('done.\n')
-
 
 def find_clusters_train(
         X, n_samples=None,
