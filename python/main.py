@@ -97,6 +97,7 @@ def main(args):
             args.cluster_dist,
             vectorize_method=args.vectorize_method,
             cluster_method=args.cluster_method,
+            tSNE=args.tSNE,
             )
 
         return
@@ -136,7 +137,8 @@ def clean(path_in, path_out):
 
 def train(
         path_in, path_model, n_dim, 
-        vectorize_method='TFIDF-SVD', cluster_method='hierarch_cosine_average'):
+        vectorize_method='TFIDF-SVD', 
+        cluster_method='hierarch_cosine_average'):
     """Read clean NOTAM csv file, train vectorize and 
     clustering (unsupervised) models and write model files.
     """
@@ -181,7 +183,10 @@ def train(
 
 def predict(
         path_in, path_out, path_model, cluster_dist, 
-        vectorize_method='TFIDF-SVD', cluster_method='hierarch_cosine_average'):
+        vectorize_method='TFIDF-SVD', 
+        cluster_method='hierarch_cosine_average',
+        tSNE=False,
+        ):
     """Read clean NOTAM csv file, read model files and 
     clustering (unsupervised) models and write model files.
     """
@@ -240,10 +245,28 @@ def predict(
         dist = cluster_dist,
     )
 
+    # TODO: add random state
+    if tSNE:
+        model_predict.visualize(method='t-SNE')
+
     # write result
     model_predict.write(path_out)
 
     return
+
+def plot_test(
+        path_in, path_out):
+    """Read NOTAM csv file that contains 
+    both important class and cluster labels.
+    """
+
+    # create test object
+    model_test = modelling.ModelTest(path_in)
+
+
+
+    return
+
 
 
 """
@@ -318,6 +341,10 @@ trained with hierarchical clustering. Takes a float value, or \'guess\' \
 (based in the quantiles of the linkage matrix to give roughly 50 clusters)\
 , or \'test\' (used only for testing purpose: will compute the cluster purity \
 for a number of clusters and output result in path_out).')
+
+    parser.add_argument(
+        '-tSNE', action='store_true', 
+        help='Perform t-SNE manifold.')
 
     args = parser.parse_args()
 

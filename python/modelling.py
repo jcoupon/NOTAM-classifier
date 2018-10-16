@@ -16,6 +16,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 
+from sklearn import preprocessing
+
 from gensim import corpora, models, similarities
 from collections import defaultdict
 
@@ -35,10 +37,13 @@ RANDOM_STATE = None
 PATH_CLUSTER_MODEL = DIR_PATH+'/cluster_model'
 
 # default method for vectoizing
-VECTORIZE_METHOD = 'TFIDF-SVD'
+VECTORIZE_METHOD = 'word2vec'
 
 # default number of dimension for the word vector
 N_DIM = 50
+
+# for the 
+PATH_ENCODE_FEATURE = DIR_PATH+'/encode_feature.pickle'
 
 
 """
@@ -127,6 +132,7 @@ class ModelTraining(object):
 #        self.__df['cluster_labels'] = self.__labels
 #        sys.stdout.write('done.\n'); sys.stdout.flush()
 
+
     def get_vector(self):
         return self.__vector
 
@@ -192,6 +198,8 @@ class ModelPredict(object):
             do_train=False, method=method,
         )
 
+        self.__df['vector'] = self.__vector.tolist()
+
         return
 
     def cluster_predict(
@@ -245,8 +253,7 @@ class ModelPredict(object):
 
 
     def visualize(
-            self, method='t-SNE', random_state=None, 
-            path_out='clusters_TSNE.csv'):
+            self, method='t-SNE', random_state=None):
         """Compute the visualization tools.
 
         default:
@@ -254,8 +261,6 @@ class ModelPredict(object):
         additional info can be
         found here https://distill.pub/2016/misread-tsne/
 
-
-        TODO: call plot_cluster
         """
 
         if method == 't-SNE':
@@ -263,15 +268,19 @@ class ModelPredict(object):
             # the perplexity drives the number of 
             # neighbours in t-SNE. A higher number 
             # tend to make results look smoother
-            perplexity = 100
+            perplexity = 30
 
             # compute the t-SNE representation
             # it takes about 30 mn for a sample
             # of 20,000
-            vector_TSNE = tsne(self.__vector, random_state=random_state, perplexity=perplexity)
+            # DEBUGGING
+            self.__visualize = tsne(
+                self.__vector,
+                random_state=random_state, 
+                perplexity=perplexity)
 
             # persist the t-SNE coordinates
-            pd.DataFrame(vector_TSNE).to_csv(path_out)
+            #pd.DataFrame(vector_TSNE).to_csv(path_out)
 
             #path_test_TSNE = path_test.replace('.csv', '_TSNE_perp{}.csv'.format(perplexity))
 
@@ -280,8 +289,10 @@ class ModelPredict(object):
             #else:
             #    test_TSNE = pd.read_csv(path_test_TSNE)[['0', '1']].values
 
+            self.__df['visualize'] = self.__visualize.tolist()
 
             return
+
 
         raise Exception('visualize(): method {} not recognized'.format(method))
 
@@ -295,7 +306,7 @@ class ModelPredict(object):
         return self.__cluster_labels
 
     def write(self, path):
-        sys.stdout.write('Writting file...')
+        sys.stdout.write('Writing file...')
         self.__df.to_csv(path)
         sys.stdout.write('done.\n')
 
@@ -804,8 +815,10 @@ def vectorize(
 
         else:
             # load the dictionary
-            vocabulary_dict = read_vocabulary(
-                path_vocabulary, method='gensim')
+            #vocabulary_dict = read_vocabulary(
+            #    path_vocabulary, method='gensim')
+
+            sys.stdout.write('Vectorizing NOTAMs...'); sys.stdout.flush()
 
             if path is not None:
                 with open(path, 'rb') as file_in:
@@ -815,7 +828,7 @@ def vectorize(
                     'vectorize(): a model file must be provided when predicting (do_train = False).')
 
             texts = [text.lower().split() for text in corpus]
-            word_counts = [vocabulary_dict.doc2bow(text) for text in texts]
+            #word_counts = [vocabulary_dict.doc2bow(text) for text in texts]
 
             if method == 'word2vec':
                 vectors = combine_word_vectors(model, texts)
@@ -852,12 +865,14 @@ def combine_word_vectors(model, texts):
     return vectors
 
 
-
 def tsne(vector, n_dim=2, random_state=None, perplexity=100):
-    """Manifold t-SNE"""
+    """Manifold t-SNE
+    see https://distill.pub/2016/misread-tsne/
+    """
 
     result = TSNE(
-        n_components=2, verbose=2, random_state=random_state, perplexity=perplexity)\
+        n_components=n_dim, verbose=2, 
+        random_state=random_state, perplexity=perplexity)\
         .fit_transform(vector)
 
     return result
@@ -901,3 +916,110 @@ def get_cluster_purity(labels, classes, min_purity=0.8):
     f_pure = sum(N[purity > min_purity])/sum(N)
 
     return N, purity, f_pure
+
+
+def extract_float_vector(lists):
+    """Return the vector when 
+    stored as list in a data frame"""
+
+    X = [
+        [float(n) for n in re.findall(r'[-+]?\d+.\d+', values)] 
+            for values in lists]
+
+    vector = np.array(X)
+
+    return vector
+
+
+def get_features(df, path=PATH_ENCODE_FEATURE, fit_encoder=False):
+    """Build the feature vector"""
+
+    # perform a few transformation
+    # should that be put in cleaning script?
+    df['low_max_alt'] = df['maxflt'] < 300 # 30k-35k feet
+    df['high_min_alt'] = df['minflt'] > 0
+    df['small_radius'] = df['radius'] < 5.0
+    df['long_text'] = df['len_txt'] > 100
+
+    # text vector
+    X_vector = extract_float_vector(df['vector'])
+
+    feature_ordinal_interval_names = [
+        'high_min_alt', 'low_max_alt', 
+        'diurnal_duration',
+        'long_text', 'small_radius',
+        'n_locations']
+
+    feature_categorical_names = [
+        'scope', 'FIR_12', 'trafficind', 
+        'code_23', 'code_45']
+
+    # encode categorical features
+    n_samples = len(X_vector)
+    n_features = len(feature_categorical_names)
+    X_categorical = np.zeros((n_samples, n_features))
+
+    if fit_encoder:
+        le_dict = {}
+
+        enc = preprocessing.OneHotEncoder()
+
+        X_tmp = []
+        for i,feature in enumerate(feature_categorical_names):
+            print('Encoding {}'.format(feature))
+            le_dict[feature] = preprocessing.LabelEncoder()
+            le_dict[feature].fit(
+                df[feature].append(pd.Series(['other'])).astype(str))
+
+            X_categorical[:, i] = le_dict[feature].transform(
+                df[feature].astype(str))
+
+            labels = le_dict[feature].transform(le_dict[feature].classes_)
+            enc.fit(labels.reshape(-1,1))
+
+            test = enc.transform(X_categorical[:, i].reshape(-1,1))
+
+            X_tmp.append(test.toarray())
+
+        X_categorical = np.concatenate(X_tmp, axis=1)
+
+        with open(path, 'wb') as file_out:
+            pickle.dump(le_dict, file_out)
+
+    else:
+        with open(path, 'rb') as file_in:
+            le_dict = pickle.load(file_in)
+
+        enc = preprocessing.OneHotEncoder()
+
+        X_tmp = []
+        for i,feature in enumerate(feature_categorical_names):
+            print('Encoding {}'.format(feature))
+
+            # make sure the category was in the training sample
+            # ignore it otherwise
+            categories = df[feature].astype(str).map(
+                lambda s: 'other' if s not in le_dict[feature].classes_ else s)
+
+            X_categorical[:, i] = le_dict[feature].transform(
+                categories)
+
+            labels = le_dict[feature].transform(le_dict[feature].classes_)
+            
+            enc.fit(labels.reshape(-1,1))
+
+            test = enc.transform(X_categorical[:, i].reshape(-1,1))
+            X_tmp.append(test.toarray())
+ 
+        X_categorical = np.concatenate(X_tmp, axis=1)
+
+    # ordinal and binary variables
+    X_ordinal = df[feature_ordinal_interval_names].fillna(0)
+
+    # print(X_vector.shape, X_categorical.shape, X_ordinal.shape)
+
+    X = np.concatenate(
+        (X_vector, X_categorical, X_ordinal), 
+        axis=1)
+
+    return X
