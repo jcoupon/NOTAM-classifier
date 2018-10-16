@@ -133,6 +133,7 @@ class ModelTraining(object):
 #        sys.stdout.write('done.\n'); sys.stdout.flush()
 
 
+
     def get_vector(self):
         return self.__vector
 
