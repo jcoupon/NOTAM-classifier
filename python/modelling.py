@@ -13,6 +13,11 @@ from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.decomposition import TruncatedSVD, LatentDirichletAllocation, NMF
 from sklearn.neighbors import KNeighborsClassifier
 
+
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.neural_network import MLPClassifier
+
+
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 
@@ -42,8 +47,11 @@ VECTORIZE_METHOD = 'word2vec'
 # default number of dimension for the word vector
 N_DIM = 50
 
-# for the 
+# for the features
 PATH_ENCODE_FEATURE = DIR_PATH+'/encode_feature.pickle'
+
+# output file for the cluster model
+PATH_CLASSIFIER_MODEL = DIR_PATH+'/classifier_model'
 
 
 """
@@ -84,7 +92,7 @@ class ModelTraining(object):
 
     def vectorize(
             self, path_out=PATH_VECTORIZE_MODEL, 
-            method=VECTORIZE_METHOD, 
+            method=VECTORIZE_METHOD,
             path_vocabulary=PATH_VOCABULARY, 
             random_state=None, n_dim=None):
         """Vectorize the NOTAMs and get the dictionary """
@@ -95,10 +103,38 @@ class ModelTraining(object):
             self.__df, path=path_out, path_vocabulary=path_vocabulary, 
             n_dim=n_dim, method=method, random_state=None)
 
-
         #self.__vocabulary_dict = read_vocabulary(path_vocabulary)
 
         return
+
+    def class_train(
+            self, path_out=PATH_CLASSIFIER_MODEL):
+        """ Train classifier and persist model
+        TODO: add classifier type as option.
+        """
+
+        # run clustering
+        sys.stdout.write('Training classifier...'); sys.stdout.flush()
+        
+        X_train = get_features(self.__df, fit_encoder=True)
+        y_train = self.__df['important']
+
+        # for quick tests
+        # model = RandomForestClassifier()
+
+        # for better precision
+        model = MLPClassifier(
+            hidden_layer_sizes=(200, 10),
+            learning_rate_init=0.01,
+            verbose=True)
+
+        model.fit(X_train, y_train)
+
+        with open(path_out, 'wb') as file_out:
+            pickle.dump(model, file_out)
+
+        sys.stdout.write('done.\n'); sys.stdout.flush()
+
 
     def cluster_train(
             self, path_out=PATH_CLUSTER_MODEL,
@@ -120,6 +156,7 @@ class ModelTraining(object):
             path_out=path_out, n_samples=n_samples, 
             random_state=random_state)
         sys.stdout.write('done.\n'); sys.stdout.flush()
+
 
 #    def cluster_predict(
 #            self, path_in=PATH_CLUSTER_MODEL, 
@@ -251,6 +288,24 @@ class ModelPredict(object):
         sys.stdout.write('done.\n'); sys.stdout.flush()
 
         return n_clusters_list, dist_list, f_pure_list
+
+
+    def class_predict(
+            self, path_in=PATH_CLASSIFIER_MODEL, 
+            method='hierarchical', dist=None):
+
+        # run clustering
+        sys.stdout.write('Predicting class...'); sys.stdout.flush()
+
+        # read model
+        with open(path_in, 'rb') as file_in:
+            model = pickle.load(file_in)
+
+        X = get_features(self.__df, fit_encoder=False)
+
+        self.__class_prob = model.predict_proba(X)[:,0]
+        self.__df['class_prob'] = self.__class_prob
+        sys.stdout.write('done.\n'); sys.stdout.flush()
 
 
     def visualize(
@@ -967,7 +1022,7 @@ def get_features(df, path=PATH_ENCODE_FEATURE, fit_encoder=False):
 
         X_tmp = []
         for i,feature in enumerate(feature_categorical_names):
-            print('Encoding {}'.format(feature))
+            # print('Encoding {}'.format(feature))
             le_dict[feature] = preprocessing.LabelEncoder()
             le_dict[feature].fit(
                 df[feature].append(pd.Series(['other'])).astype(str))
@@ -995,7 +1050,7 @@ def get_features(df, path=PATH_ENCODE_FEATURE, fit_encoder=False):
 
         X_tmp = []
         for i,feature in enumerate(feature_categorical_names):
-            print('Encoding {}'.format(feature))
+            # print('Encoding {}'.format(feature))
 
             # make sure the category was in the training sample
             # ignore it otherwise

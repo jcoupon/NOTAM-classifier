@@ -2,13 +2,6 @@
 
 Capstone project for Propulsion. Machine learning classifier for Notices to Airmen (NOTAM).
 
-## Project File Structure:
-
-- **Data:** Storage of project data and logging.
-- **Explore:** Scripts of files for data exploration.
-- **Cleaning:** Scripts for the cleaning of data.
-- **Modelling:** Scripts for ML and Modelling.
-- **Vis:** Scripts for project visualisations.
 
 ## Documentation
 ### Python
@@ -25,13 +18,33 @@ Capstone project for Propulsion. Machine learning classifier for Notices to Airm
 * [snowflakesoftware.com](https://snowflakesoftware.com/news/top-7-things-need-know-notams/)
 
 
-### Features of interest
+## workflow
 
-* duration of the NOTAM
-* type
-* position (IFR)
+### cleaning
 
 
-### Machine learning
+```
+cd Notebooks
 
-* [universal encoder for texts](https://www.tensorflow.org/hub/modules/google/universal-sentence-encoder/2)
+../python/main.py clean '../Data/23-08-2018/Export.txt' -sep ';' -path_out test.csv
+```
+
+### clustering
+
+
+```
+../python/main.py train ../Data/training/train.csv         -vectorize_method word2vec -n_dim 50         -cluster_method  hierarch_euclid_ward        -path_model ../Data/training/train_model_vectorize_word2vec.pickle,../Data/training/train_model_cluster_hierarch_euclid_ward.pickle
+../python/main.py predict ../Data/training/train.csv         -vectorize_method word2vec         -cluster_method  hierarch_euclid_ward        -path_model ../Data/training/train_model_vectorize_word2vec.pickle,../Data/training/train_model_cluster_hierarch_euclid_ward.pickle         -cluster_dist test         -path_out ../Data/training/train_word2vec_hierarch_euclid_ward_cluster_purity.csv
+../python/main.py predict ../Data/training/test.csv         -vectorize_method word2vec         -cluster_method  hierarch_euclid_ward        -path_model ../Data/training/train_model_vectorize_word2vec.pickle,../Data/training/train_model_cluster_hierarch_euclid_ward.pickle         -cluster_dist test         -path_out ../Data/training/test_word2vec_hierarch_euclid_ward_cluster_purity.csv
+
+```
+
+### classification
+
+```
+../python/main.py train_classifier ../Data/training/train_predict.csv -path_model ../Data/training/train_model_classifier.pickle
+
+../python/main.py predict_classifier ../Data/training/test_predict.csv -path_model ../Data/training/train_model_classifier.pickle -path_out ../Data/training/test_predict_class.csv
+
+
+```

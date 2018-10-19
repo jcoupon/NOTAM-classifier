@@ -82,6 +82,22 @@ def main(args):
 
         return
 
+    if args.task == 'train_classifier':
+
+        if args.path_model is None:
+            path_model = path_out+'_model_classifier.pickle'
+        else:
+            path_model = args.path_model            
+
+        train_classifier(
+            path_in,
+            path_model,
+            )
+
+        return
+
+
+
     if args.task == 'predict':
 
         if args.path_model is None:
@@ -98,6 +114,21 @@ def main(args):
             vectorize_method=args.vectorize_method,
             cluster_method=args.cluster_method,
             tSNE=args.tSNE,
+            )
+
+        return
+
+    if args.task == 'predict_classifier':
+
+        if args.path_model is None:
+            path_model = path_out+'_model_classifier.pickle'
+        else:
+            path_model = args.path_model            
+
+        predict_classifier(
+            path_in,
+            path_out+'_predict_class.csv' if args.path_out is None else args.path_out,
+            path_model,
             )
 
         return
@@ -137,7 +168,7 @@ def clean(path_in, path_out):
 
 def train(
         path_in, path_model, n_dim, 
-        vectorize_method='TFIDF-SVD', 
+        vectorize_method='word2vec', 
         cluster_method='hierarch_cosine_average'):
     """Read clean NOTAM csv file, train vectorize and 
     clustering (unsupervised) models and write model files.
@@ -181,14 +212,35 @@ def train(
 
     return
 
+def train_classifier(
+        path_in, path_model,
+    ):
+    """Read clean NOTAM csv file, train vectorize and 
+    clustering (unsupervised) models and write model files.
+    """
+    
+    sys.stdout.write(
+        'Task: train_classifier.\n\nOutput model path cluster:{0}\n\n'.format(
+            path_model)); sys.stdout.flush()
+
+    # create training object
+    model_train = modelling.ModelTraining(path_in)
+
+    model_train.class_train(
+        path_out=path_model,
+        )
+
+    return
+
+
 def predict(
         path_in, path_out, path_model, cluster_dist, 
-        vectorize_method='TFIDF-SVD', 
+        vectorize_method='word2vec', 
         cluster_method='hierarch_cosine_average',
         tSNE=False,
         ):
-    """Read clean NOTAM csv file, read model files and 
-    clustering (unsupervised) models and write model files.
+    """Read clean NOTAM csv file, read model files and
+    clustering (unsupervised) models, and do clustering.
     """
 
     # get the paths out for the models
@@ -254,6 +306,33 @@ def predict(
 
     return
 
+
+
+def predict_classifier(
+        path_in, path_out, path_model,
+        ):
+    """Read clean NOTAM csv file with word vectors, read model files and 
+    does classification models.
+    """
+
+    sys.stdout.write(
+        'Task: predict_classifier.\n\n\
+Input model path:{0}\n\n'.format(path_model)); sys.stdout.flush()
+
+    # create predict object
+    model_predict = modelling.ModelPredict(path_in)
+
+    model_predict.class_predict(
+        path_in = path_model,
+    )
+
+    # write result
+    model_predict.write(path_out)
+
+    return
+
+
+
 def plot_test(
         path_in, path_out):
     """Read NOTAM csv file that contains 
@@ -295,7 +374,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         'task',
-        help='Task to perform among \'clean\',\'train\', and \'predict\'',
+        help='Task to perform among \'clean\',\'train\', ,\'train_classifier\', \'predict\' and \'predict_classifier\'',
     )
 
     parser.add_argument(
@@ -315,7 +394,6 @@ input for \'predict\'). Please provide 2 file names separated \
 by a coma, first providing a path for the vectorizing model, \
 then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
 
-
     parser.add_argument(
         '-seed', default=None, type=int, help='Random seed.')
 
@@ -323,7 +401,7 @@ then for the cluster model, e.g: model_vectorize.pickle,model_cluster.pickle')
         '-sep', default=',', help='Separator for the input file.')
 
     parser.add_argument(
-        '-vectorize_method', default='TFIDF-SVD', 
+        '-vectorize_method', default='word2vec', 
         help='Method to vectorize the NOTAMs. Default: TFIDF-SVD.')
 
     parser.add_argument(
